@@ -5,15 +5,10 @@
 #include "qca_circuit.h"
 
 #include <iostream>
-#include <random>
-#include <cstdlib>
 
 namespace hfut {
+
     using namespace std;
-
-    QCACircuit::QCACircuit() {
-
-    }
 
     void QCACircuit::populate_cells(const vector<vector<int>> &cell_structure_matrix) {
         for (size_t i=0; i<cell_structure_matrix.size(); ++i) {
@@ -50,15 +45,6 @@ namespace hfut {
     }
 
     void QCACircuit::clear() {
-        for (size_t i=0; i<cells.size(); ++i) {
-            for (size_t j=0; j<cells[i].size(); ++j) {
-                if (cells[i][j] != nullptr) {
-                    delete cells[i][j];
-                    cells[i][j] = nullptr;
-                }
-            }
-        }
-
         cells.clear();
     }
 

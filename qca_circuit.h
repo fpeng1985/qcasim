@@ -14,8 +14,6 @@ namespace hfut {
 
     class QCACircuit {
     public:
-        QCACircuit();
-
         void populate_cells(const std::vector<std::vector<int>> &cell_structure_matrix);
         std::shared_ptr<QCACell> get_cell(int i, int j);
 

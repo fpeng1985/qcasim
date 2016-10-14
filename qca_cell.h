@@ -5,15 +5,17 @@
 #ifndef QCASIM_QCACELL_H
 #define QCASIM_QCACELL_H
 
+#include <cstddef>
 
 namespace hfut {
+
     enum class CellType {Input, Output, Normal};
 
     struct QCACell {
-        QCACell(int i=0, int j=0, double p=1, CellType t=CellType::Normal);
+        QCACell(std::size_t i=0, std::size_t j=0, long double p=1, CellType t=CellType::Normal);
 
-        int x_index;
-        int y_index;
+        std::size_t x_index;
+        std::size_t y_index;
         long double polarization;
         CellType cell_type;
     };

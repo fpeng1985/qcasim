@@ -53,11 +53,6 @@ namespace hfut {
             return it->cend();
         }
 
-//        std::size_t row_size;
-//        std::size_t col_size;
-
-
-
     private:
         std::vector<std::vector<std::shared_ptr<QCACell>>>  cells;
 

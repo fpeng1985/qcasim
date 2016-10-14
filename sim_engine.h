@@ -8,34 +8,43 @@
 #include "qca_circuit.h"
 
 #include <vector>
-#include <tuple>
+#include <map>
 #include <memory>
 
 namespace hfut {
 
-    typedef std::tuple<size_t, size_t, double> Polarization;
+    typedef std::map<std::pair<size_t, size_t>, double> Polarization;
 
     class SimEngine {
 
     public:
-        SimEngine(std::shared_ptr<QCACircuit> circuit, const std::vector<Polarization> &input_p);
+        SimEngine(std::shared_ptr<QCACircuit> circuit, const Polarization &input_p);
 
-        //void initialize_output_polarization();
         void generate_neighbour_polarization();
+        long double accept_circuit_polarization();
 
     private:
-        static const double QCA_TEMPERATURE;
+        static const long double QCA_TEMPERATURE;
+        static const long double RI;
+        static const long double BOLTZMANN;
+
+        static const long double EK1;
+        static const long double EK2;
+        static const long double EK3;
+
+        long double compute_new_polarization_from_old(const Polarization &old_pola, Polarization &new_pola);
+        long double compute_acceptance_probability(long double circuit_diff, long double neighbour_diff);
 
         std::shared_ptr<QCACircuit> circuit;
-        std::vector<Polarization> input_p;
-        std::vector<Polarization> output_p;
-        std::vector<Polarization> neighbour_p;
-        std::vector<Polarization> best_p;
+        Polarization input_p;
+        Polarization output_p;
+        Polarization neighbour_p;
+        Polarization best_p;
 
-        double sa_temp;
-        double terminate_temp;
-        double cooling_rate;
-        double convergence_factor;
+        long double sa_temp;
+        long double terminate_temp;
+        long double cooling_rate;
+        long double convergence_factor;
     };
 
 }

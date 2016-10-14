@@ -17,18 +17,23 @@ namespace hfut {
 
     void QCACircuit::populate_cells(const vector<vector<int>> &cell_structure_matrix) {
         for (size_t i=0; i<cell_structure_matrix.size(); ++i) {
-            cells.push_back(vector<QCACell*>());
+            cells.push_back(vector<shared_ptr<QCACell>>());
 
             for (size_t j=0; j<cell_structure_matrix[i].size(); ++j) {
-                if (cell_structure_matrix[i][j] == 0) {
-                    cells[i].push_back(nullptr);
-                } else if (cell_structure_matrix[i][j] == 1) {
-                    cells[i].push_back(new QCACell(i, j, 0, CellType::Normal));
-                } else if (cell_structure_matrix[i][j] == -1) {
-                    cells[i].push_back(new QCACell(i, j, 0, CellType::Input));
-                } else if (cell_structure_matrix[i][j] == -2) {
-                    cells[i].push_back(new QCACell(i, j, 0, CellType::Output));
-                } else {
+                switch (cell_structure_matrix[i][j]) {
+                    case 0:
+                        cells[i].push_back(nullptr);
+                        break;
+                    case 1:
+                        cells[i].push_back(make_shared<QCACell>(i, j, 0, CellType::Normal));
+                        break;
+                    case -1:
+                        cells[i].push_back(make_shared<QCACell>(i, j, 0, CellType::Input));
+                        break;
+                    case -2:
+                        cells[i].push_back(make_shared<QCACell>(i, j, 0, CellType::Output));
+                        break;
+                    default:
                         cerr << "Input format error!" << endl;
                         exit(-1);
                 }
@@ -36,13 +41,11 @@ namespace hfut {
         }
     }
 
-    QCACell *QCACircuit::get_cell(size_t i, size_t j) {
+    shared_ptr<QCACell> QCACircuit::get_cell(int i, int j) {
         if (i>=0 && i<cells.size() && j>=0 && j<cells[i].size()) {
             return cells[i][j];
         } else {
-            cout << i << " " << j << endl;
-            cerr << "Overflow circuit index boundary!" << endl;
-            exit(-2);
+            return nullptr;
         }
     }
 

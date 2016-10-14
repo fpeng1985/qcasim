@@ -14,7 +14,7 @@ namespace hfut {
 
         int x_index;
         int y_index;
-        double polarization;
+        long double polarization;
         CellType cell_type;
     };
 

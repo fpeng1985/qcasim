@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <tuple>
+#include <memory>
 
 namespace hfut {
 
@@ -17,19 +18,24 @@ namespace hfut {
     class SimEngine {
 
     public:
-        SimEngine(QCACircuit *circuit, const std::vector<Polarization> &input_p);
+        SimEngine(std::shared_ptr<QCACircuit> circuit, const std::vector<Polarization> &input_p);
 
-        void initialize_output_polarization();
+        //void initialize_output_polarization();
         void generate_neighbour_polarization();
 
     private:
-        static const double TEMPERATURE;
+        static const double QCA_TEMPERATURE;
 
-        QCACircuit *circuit;
+        std::shared_ptr<QCACircuit> circuit;
         std::vector<Polarization> input_p;
         std::vector<Polarization> output_p;
         std::vector<Polarization> neighbour_p;
         std::vector<Polarization> best_p;
+
+        double sa_temp;
+        double terminate_temp;
+        double cooling_rate;
+        double convergence_factor;
     };
 
 }

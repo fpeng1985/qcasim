@@ -15,12 +15,14 @@ namespace hfut {
 
     class QCACircuit {
     public:
+        typedef std::vector<std::vector<int>> CircuitStructure;
+
         typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::iterator RowIterator;
         typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::const_iterator RowConstIterator;
         typedef std::vector<std::shared_ptr<QCACell>>::iterator ColIterator;
         typedef std::vector<std::shared_ptr<QCACell>>::const_iterator ColConstIterator;
 
-        void populate_cells(const std::vector<std::vector<int>> &cell_structure_matrix);
+        void populate_cells(const CircuitStructure &cell_structure_matrix);
         std::shared_ptr<QCACell> get_cell(int i, int j);
 
         void clear();

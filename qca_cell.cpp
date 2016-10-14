@@ -6,8 +6,6 @@
 
 namespace hfut {
 
-    QCACell::QCACell(int i, int j, double p, CellType t) : x_index(i), y_index(j), polarization(p), cell_type(t)
-    {
-    }
+    QCACell::QCACell(int i, int j, double p, CellType t) : x_index(i), y_index(j), polarization(p), cell_type(t) {}
 
 }

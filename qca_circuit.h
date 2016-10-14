@@ -22,6 +22,10 @@ namespace hfut {
         void populate_cells(const vector<vector<int>> &cell_structure_matrix);
         QCACell *get_cell(size_t i, size_t j);
 
+        void clear();
+
+        void initialize_polarization();
+
     private:
         vector<vector<QCACell*>>  cells;
     };

@@ -3,3 +3,11 @@
 //
 
 #include "sim_engine.h"
+
+namespace hfut {
+
+    void SimEngine::initialize_circuit() {
+        circuit->initialize_polarization();
+    }
+
+}

@@ -5,18 +5,17 @@
 #include "qca_circuit.h"
 
 #include <iostream>
+#include <random>
 #include <cstdlib>
 
 namespace hfut {
     using namespace std;
 
-    QCACircuit::QCACircuit()
-    {
+    QCACircuit::QCACircuit() {
 
     }
 
-    void QCACircuit::populate_cells(const vector<vector<int>> &cell_structure_matrix)
-    {
+    void QCACircuit::populate_cells(const vector<vector<int>> &cell_structure_matrix) {
         for (size_t i=0; i<cell_structure_matrix.size(); ++i) {
             cells.push_back(vector<QCACell*>());
 
@@ -38,14 +37,40 @@ namespace hfut {
 
     }
 
-    QCACell *QCACircuit::get_cell(size_t i, size_t j)
-    {
+    QCACell *QCACircuit::get_cell(size_t i, size_t j) {
         if (i>=0 && i<cells.size() && j>=0 && j<cells[i].size()) {
             return cells[i][j];
         } else {
             cout << i << " " << j << endl;
             cerr << "Overflow circuit index boundary!" << endl;
             exit(-2);
+        }
+    }
+
+    void QCACircuit::clear() {
+        for (size_t i=0; i<cells.size(); ++i) {
+            for (size_t j=0; j<cells[i].size(); ++j) {
+                if (cells[i][j] != nullptr) {
+                    delete cells[i][j];
+                    cells[i][j] = nullptr;
+                }
+            }
+        }
+
+        cells.clear();
+    }
+
+    void QCACircuit::initialize_polarization() {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<> dis(-1, 1);
+
+        for (auto &line : cells) {
+            for (auto &cell : line) {
+                if (cell != nullptr && cell->cell_type != CellType::Input) {
+                    cell->polarization = dis(gen);
+                }
+            }
         }
     }
 }

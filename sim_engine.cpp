@@ -72,6 +72,10 @@ namespace hfut {
 
         best_p = this->output_p;
         best_diff = output_diff;
+
+#ifndef NDBUG
+        fs.open(getenv("HOME") + string("/output.txt"));
+#endif
     }
 
     void SimEngine::generate_neighbour_polarization() {
@@ -79,15 +83,11 @@ namespace hfut {
         neighbour_p = output_p;
 
         //randomly select an output cell and change its polarization
-//        random_device rd;
-//        mt19937 gen(rd());
-
-//        uniform_int_distribution<> uidis(0, output_p.size()-1);
         auto it = neighbour_p.begin();
         advance(it, rand()%output_p.size());
 
-//        uniform_real_distribution<> urdis(-1, 1);
-        it->second = (rand() * 1.0 / RAND_MAX - 0.5)*2;//[-1, 1]
+        it->second += (rand() * 1.0 / RAND_MAX - 0.5)*2  * sa_temp / 1000;//[-1, 1]
+        it->second = fmod(it->second, 1);
     }
 
     long double SimEngine::accept_circuit_polarization() {
@@ -95,14 +95,8 @@ namespace hfut {
         Polarization pola_from_neighbour;
         long double neighbour_diff = compute_new_polarization_from_old(neighbour_p, pola_from_neighbour);
 
-        long double acceptance_prob = compute_acceptance_probability(output_diff, neighbour_diff);
-
         //judge the acceptance of the neighbour
-//        random_device rd;
-//        mt19937 gen(rd());
-//        uniform_real_distribution<> dis(0, 1);
-
-        bool accept = acceptance_prob > rand()*1.0/RAND_MAX;//[0,1]
+        bool accept = accept_neighbour(output_diff, neighbour_diff);
         if (accept) {
             output_p = neighbour_p;
 
@@ -131,14 +125,14 @@ namespace hfut {
         int i = 0;
         long double diff = 0;
 
-        ofstream fs(getenv("HOME") + string("/output.txt"));
-
         for (;;++i) {
             generate_neighbour_polarization();
             diff = accept_circuit_polarization();
 
+#ifndef NDBUG
             fs << i  << "th iteration, diff is " << diff <<  endl;
             fs << *circuit << endl;
+#endif
 
             if (sa_temp < terminate_temp || diff < convergence_factor)
                 break;
@@ -224,7 +218,7 @@ namespace hfut {
             //sqrt of RI and sigma
             long double tmp = sqrt(4*RI*RI + sigma*sigma);
             //new polarization value
-            long double new_pola_val = sigma/tmp * tanh(tmp/2*BOLTZMANN*QCA_TEMPERATURE);
+            long double new_pola_val = sigma/tmp * tanh(tmp/(2*BOLTZMANN*QCA_TEMPERATURE));
 
             //update pola_from_neighbour and target_for_neighbour
             new_pola.insert(make_pair(make_pair(xidx, yidx), new_pola_val));
@@ -234,14 +228,27 @@ namespace hfut {
         return sqrt(diff);
     }
 
-    long double SimEngine::compute_acceptance_probability(long double circuit_diff, long double neighbour_diff) {
-        long double probability = 1;
+    bool SimEngine::accept_neighbour(long double circuit_diff, long double neighbour_diff) {
+        if (neighbour_diff < circuit_diff) {
+            return true;
+        } else {
+            double prob = exp((-1*output_diff) / sa_temp);
+#ifndef NDBUG
+            fs << "enter judge mode" << endl;
+            fs << "accept probability is " << prob << endl;
+#endif
+            if (prob > rand()*1.0/RAND_MAX) {//[0,1]
+#ifndef NDBUG
+                fs << "accept neighbour" << endl;
+#endif
+                return true;
+            }
 
-        if ( neighbour_diff >= circuit_diff ) {
-            probability = exp((circuit_diff-neighbour_diff) / sa_temp);
+#ifndef NDBUG
+            fs << "not accept neighbour" << endl;
+#endif
         }
-
-        return probability;
+        return false;
     }
 
 }

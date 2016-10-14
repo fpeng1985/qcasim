@@ -46,6 +46,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
             engine.run_simulation();
 
             THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->cell_type == CellType::Output);
                 REQUIRE(circuit->get_cell(2, 4)->polarization > 0.5);
             }
         }

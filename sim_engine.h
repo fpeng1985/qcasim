@@ -7,6 +7,7 @@
 
 #include "qca_circuit.h"
 
+#include <fstream>
 #include <vector>
 #include <map>
 #include <memory>
@@ -33,7 +34,7 @@ namespace hfut {
 
     private:
         long double compute_new_polarization_from_old(const Polarization &old_pola, Polarization &new_pola);
-        long double compute_acceptance_probability(long double circuit_diff, long double neighbour_diff);
+        bool accept_neighbour(long double circuit_diff, long double neighbour_diff);
 
         std::shared_ptr<QCACircuit> circuit;
 
@@ -49,6 +50,10 @@ namespace hfut {
         long double cooling_rate;
         long double terminate_temp;
         long double convergence_factor;
+
+#ifndef NDBUG
+        std::ofstream fs;
+#endif
     };
 
 }

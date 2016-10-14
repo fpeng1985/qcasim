@@ -11,6 +11,8 @@ namespace hfut {
     using namespace std;
 
     void QCACircuit::populate_cells(const vector<vector<int>> &cell_structure_matrix) {
+        clear();
+
         for (size_t i=0; i<cell_structure_matrix.size(); ++i) {
             cells.push_back(vector<shared_ptr<QCACell>>());
 

@@ -37,9 +37,14 @@ namespace hfut {
 
         std::shared_ptr<QCACircuit> circuit;
         Polarization input_p;
+
         Polarization output_p;
+        long double  output_diff;
+
         Polarization neighbour_p;
+
         Polarization best_p;
+        long double  best_diff;
 
         long double sa_temp;
         long double terminate_temp;

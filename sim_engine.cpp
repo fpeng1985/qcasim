@@ -43,6 +43,8 @@ namespace hfut {
             }
         }
 
+        output_diff = compute_new_polarization_from_old(output_p, Polarization());
+
         best_p = output_p;
     }
 
@@ -61,13 +63,9 @@ namespace hfut {
     }
 
     long double SimEngine::accept_circuit_polarization() {
-        //compute new polarization from current circuit polarization
-        Polarization pola_from_circuit;
-        long double diff_for_circuit = compute_new_polarization_from_old(output_p, pola_from_circuit);
-
         //compute new polarization from current neighbour polarization
         Polarization pola_from_neighbour;
-        long double diff_for_neighbour = compute_new_polarization_from_old(neighbour_p, pola_from_neighbour);
+        long double neighbour_diff = compute_new_polarization_from_old(neighbour_p, pola_from_neighbour);
 
         long double acceptance_prob = compute_acceptance_probability(diff_for_circuit, diff_for_neighbour);
 
@@ -86,8 +84,11 @@ namespace hfut {
                 circuit->cells[xidx][yidx] = it->second;
             }
 
-            if (diff_for_neighbour < diff_for_circuit) {
+            output_diff = neighbour_diff;
+
+            if (neighbour_diff < best_diff) {
                 best_p = neighbour_p;
+                best_diff = neighbour_diff;
             }
         }
 
@@ -102,6 +103,8 @@ namespace hfut {
     }
 
     long double SimEngine::compute_new_polarization_from_old(const Polarization &old_pola, Polarization &new_pola) {
+        assert( new_pola.empty() );
+
         long double diff = 0;
 
         for (Polarization::iterator it=old_pola.begin(); it!=old_pola.end(); ++it) {

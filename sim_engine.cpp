@@ -4,48 +4,74 @@
 
 #include "sim_engine.h"
 
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+#include <cstdlib>
+#include <cassert>
+#include <ctime>
 #include <cmath>
 
 namespace hfut {
 
     using namespace std;
 
-    SimEngine::QCATEMPERATURE = 1;
-    SimEngine::RI = 3.8e-10;
-    SimEngine::BOLTZMANN = 1.38e-23;
+    const long double SimEngine::QCA_TEMPERATURE = 1.0L;
+    const long double SimEngine::RI = 3.8e-10L;
+    const long double SimEngine::BOLTZMANN = 1.38e-23L;
 
-    SimEngine::EK1 = 2.3637e-22;
-    SimEngine::EK2 = 7.68e-24;
-    SimEngine::EK3 = -5.1638e-23;
+    const long double SimEngine::EK1 = 2.3637e-22L;
+    const long double SimEngine::EK2 = 7.68e-24L;
+    const long double SimEngine::EK3 = -5.1638e-23L;
 
-    SimEngine::SimEngine(shared_ptr<QCACircuit> circuit, const Polarization &input_p) {
+    SimEngine::SimEngine(shared_ptr<QCACircuit> circuit, const Polarization &input_p, const Polarization &output_p) {
         //set simulated annealing algorithm parameters
         sa_temp = 1000;
         terminate_temp = 0.01;
-        cooling_rate = 0.96;
+        cooling_rate = 0.9999;
         convergence_factor = 1e-8;
 
-        //initialize circuit structure and input polarizations
+        //initialize circuit structure
         this->circuit = circuit;
-        this->input_p = input_p;
 
-        //randomly generate output polarizations
-        random_device rd;
-        mt19937 gen(rd());
-        uniform_real_distribution<> dis(-1, 1);
+        //initialize input polarizations
+        for (auto &it : input_p) {
+            auto &xidx = it.first.first;
+            auto &yidx = it.first.second;
+            circuit->cells[xidx][yidx]->polarization = it.second;
+        }
 
-        for (size_t i=0; i<circuit->cells.size(); ++i) {
-            for (size_t j=0; j<circuit->cells[i].size(); ++j) {
-                if (cell != nullptr && cell->cell_type != CellType::Input) {
-                    cell->polarization = dis(gen);
-                    output_p.insert(make_pair(make_pair(i, j), cell->polarization));
+        srand(time(0));
+
+        //initialize output polarizations
+        this->output_p = output_p;
+        if (output_p.empty()) {
+            //randomly generate output polarizations
+
+            shared_ptr<QCACell> cell;
+            for (size_t i=0; i<circuit->cells.size(); ++i) {
+                for (size_t j=0; j<circuit->cells[i].size(); ++j) {
+                    cell = circuit->cells[i][j];
+
+                    if (cell != nullptr && cell->cell_type != CellType::Input) {
+                        cell->polarization = (rand() * 1.0 / RAND_MAX - 0.5)*2;//[-1, 1]
+                        this->output_p.insert(make_pair(make_pair(i, j), cell->polarization));
+                    }
                 }
+            }
+        } else {
+            for (auto &it : output_p) {
+                auto &xidx = it.first.first;
+                auto &yidx = it.first.second;
+                circuit->cells[xidx][yidx]->polarization = it.second;
             }
         }
 
-        output_diff = compute_new_polarization_from_old(output_p, Polarization());
+        Polarization tmp_pola;
+        output_diff = compute_new_polarization_from_old(this->output_p, tmp_pola);
 
-        best_p = output_p;
+        best_p = this->output_p;
+        best_diff = output_diff;
     }
 
     void SimEngine::generate_neighbour_polarization() {
@@ -53,13 +79,15 @@ namespace hfut {
         neighbour_p = output_p;
 
         //randomly select an output cell and change its polarization
-        random_device rd;
-        mt19937 gen(rd());
+//        random_device rd;
+//        mt19937 gen(rd());
 
-        uniform_int_distribution<> uidis(0, output_p.size()-1);
-        uniform_real_distribution<> urdis(-1, 1);
+//        uniform_int_distribution<> uidis(0, output_p.size()-1);
+        auto it = neighbour_p.begin();
+        advance(it, rand()%output_p.size());
 
-        get<2>( neighbour_p[uidis(gen)] ) = urdis(gen);
+//        uniform_real_distribution<> urdis(-1, 1);
+        it->second = (rand() * 1.0 / RAND_MAX - 0.5)*2;//[-1, 1]
     }
 
     long double SimEngine::accept_circuit_polarization() {
@@ -67,21 +95,21 @@ namespace hfut {
         Polarization pola_from_neighbour;
         long double neighbour_diff = compute_new_polarization_from_old(neighbour_p, pola_from_neighbour);
 
-        long double acceptance_prob = compute_acceptance_probability(diff_for_circuit, diff_for_neighbour);
+        long double acceptance_prob = compute_acceptance_probability(output_diff, neighbour_diff);
 
         //judge the acceptance of the neighbour
-        random_device rd;
-        mt19937 gen(rd());
-        uniform_real_distribution<> dis(0, 1);
+//        random_device rd;
+//        mt19937 gen(rd());
+//        uniform_real_distribution<> dis(0, 1);
 
-        bool accept = acceptance_prob > dis(gen);
+        bool accept = acceptance_prob > rand()*1.0/RAND_MAX;//[0,1]
         if (accept) {
             output_p = neighbour_p;
 
             for (auto it=output_p.begin(); it!=output_p.end(); ++it) {
                 const size_t &xidx = it->first.first;
                 const size_t &yidx = it->first.second;
-                circuit->cells[xidx][yidx] = it->second;
+                circuit->cells[xidx][yidx]->polarization = it->second;
             }
 
             output_diff = neighbour_diff;
@@ -95,10 +123,25 @@ namespace hfut {
         //cooling the sa algorithm temperature
         sa_temp *= cooling_rate;
 
-        if (accept) {
-            return diff_for_circuit;
-        } else {
-            return diff_for_neighbour;
+        return output_diff;
+    }
+
+    void SimEngine::run_simulation() {
+
+        int i = 0;
+        long double diff = 0;
+
+        ofstream fs(getenv("HOME") + string("/output.txt"));
+
+        for (;;++i) {
+            generate_neighbour_polarization();
+            diff = accept_circuit_polarization();
+
+            fs << i  << "th iteration, diff is " << diff <<  endl;
+            fs << *circuit << endl;
+
+            if (sa_temp < terminate_temp || diff < convergence_factor)
+                break;
         }
     }
 
@@ -107,12 +150,12 @@ namespace hfut {
 
         long double diff = 0;
 
-        for (Polarization::iterator it=old_pola.begin(); it!=old_pola.end(); ++it) {
-            int xidx = it->first->first;
-            int yidx = it->first.second;
+        for (Polarization::const_iterator it=old_pola.begin(); it!=old_pola.end(); ++it) {
+            int xidx = int(it->first.first);
+            int yidx = int(it->first.second);
             const long double &cur_pola_val = it->second;
 
-            QCACell *curcell;
+            shared_ptr<QCACell> curcell;
             long double sigma = 0;
 
             //type 1 neighbour cells
@@ -191,7 +234,7 @@ namespace hfut {
         return sqrt(diff);
     }
 
-    long double compute_acceptance_probability(long double circuit_diff, long double neighbour_diff) {
+    long double SimEngine::compute_acceptance_probability(long double circuit_diff, long double neighbour_diff) {
         long double probability = 1;
 
         if ( neighbour_diff >= circuit_diff ) {
@@ -200,4 +243,5 @@ namespace hfut {
 
         return probability;
     }
+
 }

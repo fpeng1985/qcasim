@@ -49,19 +49,19 @@ namespace hfut {
     }
 
     ostream & operator<<(ostream &out, const QCACircuit &circuit) {
-        out << "===============================" << endl;
+        out << "=========================================================================================" << endl;
         for (auto rit=circuit.row_begin(); rit!=circuit.row_end(); ++rit) {
             for (auto cit=circuit.col_begin(rit); cit!=circuit.col_end(rit); ++cit) {
                 shared_ptr<QCACell> cell = *cit;
                 if (cell == nullptr) {
-                    out << "X\t";
+                    out << "X\t\t";
                 } else {
-                    out << cell->polarization << "\t";
+                    out << cell->polarization << "\t\t";
                 }
             }
             out << endl;
         }
-        out << "===============================" << endl;
+        out << "=========================================================================================" << endl;
         return out;
     }
 

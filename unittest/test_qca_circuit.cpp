@@ -24,17 +24,6 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
             circuit_structure_matrix.push_back(vector<int>());
         }
 
-
-//        circuit_structure_matrix[4].assign({0, 0, -1, 0, 0});
-//
-//        circuit_structure_matrix[3].assign({0, 1, 1, 1, 0});
-//
-//        circuit_structure_matrix[2].assign({-1, 1, 1, 1, -2});
-//
-//        circuit_structure_matrix[1].assign({0, 1, 1, 1, 0});
-//
-//        circuit_structure_matrix[0].assign({0, 0, -1, 0, 0});
-
         circuit_structure_matrix[4] += 0, 0, -1, 0, 0;
 
         circuit_structure_matrix[3] += 0, 1, 1, 1, 0;
@@ -54,7 +43,6 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
                 REQUIRE(circuit.get_cell(2, 4)->cell_type == CellType::Output);
             }
         }
-
     }
 }
 

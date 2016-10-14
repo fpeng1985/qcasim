@@ -37,7 +37,7 @@ namespace hfut {
     }
 
     shared_ptr<QCACell> QCACircuit::get_cell(int i, int j) {
-        if (i>=0 && i<cells.size() && j>=0 && j<cells[i].size()) {
+        if (i>=0 && i<int(cells.size()) && j>=0 && j<int(cells[i].size())) {
             return cells[i][j];
         } else {
             return nullptr;
@@ -46,6 +46,23 @@ namespace hfut {
 
     void QCACircuit::clear() {
         cells.clear();
+    }
+
+    ostream & operator<<(ostream &out, const QCACircuit &circuit) {
+        out << "===============================" << endl;
+        for (auto rit=circuit.row_begin(); rit!=circuit.row_end(); ++rit) {
+            for (auto cit=circuit.col_begin(rit); cit!=circuit.col_end(rit); ++cit) {
+                shared_ptr<QCACell> cell = *cit;
+                if (cell == nullptr) {
+                    out << "X\t";
+                } else {
+                    out << cell->polarization << "\t";
+                }
+            }
+            out << endl;
+        }
+        out << "===============================" << endl;
+        return out;
     }
 
 }

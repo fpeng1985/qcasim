@@ -38,6 +38,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         WHEN("we populate the circuit using description matrix") {
             circuit.populate_cells(circuit_structure_matrix);
 
+            cout << circuit << endl;
+
+
             THEN("we get the circuit structure") {
                 REQUIRE(circuit.get_cell(0, 2)->cell_type == CellType::Input);
                 REQUIRE(circuit.get_cell(2, 4)->cell_type == CellType::Output);

@@ -5,7 +5,7 @@
 #ifndef QCASIM_QCACELL_H
 #define QCASIM_QCACELL_H
 
-#include <cstddef>
+#include <cstdlib>
 
 namespace hfut {
 

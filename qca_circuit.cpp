@@ -34,7 +34,6 @@ namespace hfut {
                 }
             }
         }
-
     }
 
     QCACell *QCACircuit::get_cell(size_t i, size_t j) {
@@ -60,17 +59,4 @@ namespace hfut {
         cells.clear();
     }
 
-    void QCACircuit::initialize_polarization() {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<> dis(-1, 1);
-
-        for (auto &line : cells) {
-            for (auto &cell : line) {
-                if (cell != nullptr && cell->cell_type != CellType::Input) {
-                    cell->polarization = dis(gen);
-                }
-            }
-        }
-    }
 }

@@ -24,10 +24,10 @@ namespace hfut {
 
         void clear();
 
-        void initialize_polarization();
-
     private:
         vector<vector<QCACell*>>  cells;
+
+        friend class SimEngine;
     };
 
 }

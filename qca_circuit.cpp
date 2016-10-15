@@ -4,8 +4,6 @@
 
 #include "qca_circuit.h"
 
-#include <iostream>
-
 namespace hfut {
 
     using namespace std;
@@ -39,7 +37,7 @@ namespace hfut {
     }
 
     shared_ptr<QCACell> QCACircuit::get_cell(int i, int j) {
-        if (i>=0 && i<int(cells.size()) && j>=0 && j<int(cells[i].size())) {
+        if (i>=0 && i<(cells.size()) && j>=0 && j<(cells[i].size())) {
             return cells[i][j];
         } else {
             return nullptr;

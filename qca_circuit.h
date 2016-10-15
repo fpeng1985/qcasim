@@ -56,7 +56,6 @@ namespace hfut {
     private:
         std::vector<std::vector<std::shared_ptr<QCACell>>>  cells;
 
-        friend class SimEngine;
         friend std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);
     };
 

@@ -2,49 +2,49 @@
 // Created by Administrator on 2016/10/14.
 //
 
-#include "SimManager.h"
+#include "sim_manager.h"
 
 #include <fstream>
 #include <sstream>
 #include <list>
-#include <itrator>
+#include <iterator>
 #include <algorithm>
 
 namespace hfut {
 
     using namespace std;
 
-    void SimManager::load_benchmark(const string &path) {
-        structures.clear();
-        structures.push_back(QCACircuit::CircuitStructure());
 
+    SimManager::SimManager() {
+        circuit = make_shared<QCACircuit>();
+
+        engine = make_shared<SimEngine>();
+        engine->set_circuit(circuit);
+    }
+
+    void SimManager::load_benchmark(const string &path) {
+        QCACircuit::CircuitStructure structure;
         //read file into strings
-        ifstream in(path);
+        ifstream ifs(path);
         list<string> lines;
-        string line;
-        while (!in.eof()) {
-            get_line(in, line);
+        for (string line; getline(ifs, line);) {
             lines.push_front(line);//insert into the front
         }
-        in.close();
+        ifs.close();
 
-        //convert string to CircuitStructure and feed into the 0th position
-        istringstream iss;
-        int i = 0;
+        //convert string to CircuitStructure
         for (auto &line : lines) {
-            iss.str(line);
-
-            structures[0].push_back(vector<int>());
-
-            copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(structures[0][i]));
-
-            ++i;
+            structure.emplace_back();
+            istringstream iss(line);
+            copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(*structure.rbegin()));
         }
 
         //populate circuit
-        circuit->populate_cells(structures[0]);
+        circuit->populate_cells(structure);
 
-        //generate other circuit structures
+        //generate all the circuit structures
+        structures.clear();
+        structures.push_back(structure);
         //TODO
     }
 

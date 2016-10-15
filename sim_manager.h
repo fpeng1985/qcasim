@@ -16,14 +16,15 @@ namespace hfut {
 
     class SimManager {
     public:
+        SimManager();
+
         void load_benchmark(const std::string &path);
 
     private:
-        std::shared_ptr<SimEngine> engine;
+        std::shared_ptr<SimEngine>  engine;
         std::shared_ptr<QCACircuit> circuit;
 
         std::vector<QCACircuit::CircuitStructure> structures;
-
     };
 
 }

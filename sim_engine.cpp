@@ -96,10 +96,6 @@ namespace hfut {
             }
         }
 
-        for (auto it : output_p) {
-            cout << it.first.first << " " << it.first.second << " " << it.second << endl;
-        }
-
         //compute output_diff
         output_diff = compute_polarization_energy(output_p);
 

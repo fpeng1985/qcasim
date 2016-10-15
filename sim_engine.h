@@ -14,42 +14,45 @@
 
 namespace hfut {
 
-    typedef std::map<std::pair<std::size_t, std::size_t>, long double> Polarization;
+    typedef std::map<std::pair<int, int>, long double> Polarization;
 
     class SimEngine {
     public:
-        SimEngine(std::shared_ptr<QCACircuit> circuit, const Polarization &input_p, const Polarization &output_p=Polarization());
+        SimEngine();
 
-        void generate_neighbour_polarization();
-        long double accept_circuit_polarization();
-        void run_simulation();
-
-        static const long double QCA_TEMPERATURE;
-        static const long double RI;
-        static const long double BOLTZMANN;
-
-        static const long double EK1;
-        static const long double EK2;
-        static const long double EK3;
+        void set_circuit(std::shared_ptr<QCACircuit> circuit);
+        void run_simulation(const Polarization &input_p);
 
     private:
-        long double compute_new_polarization_from_old(const Polarization &old_pola, Polarization &new_pola);
-        bool accept_neighbour(long double circuit_diff, long double neighbour_diff);
+        //top level routine in sa algorithm
+        void set_input_polarization(const Polarization &pola) const;
+        void set_output_polarization_randomly() const;
+        void setup_runtime_states();
+        void make_anealing_iteration();
 
-        std::shared_ptr<QCACircuit> circuit;
+        //middle level routine in sa algorithm
+        void neighbour();
+        void accept();
 
-        Polarization output_p;
-        long double  output_diff;
+        //low level routin in sa algorithm
+        long double compute_polarization_energy(const Polarization &old_pola) const;
+        bool compare_energy(long double circuit_diff, long double neighbour_diff) const;
 
-        Polarization neighbour_p;
-
-        Polarization best_p;
-        long double  best_diff;
-
+        //simulated anealing algorithm parameters
         long double sa_temp;
         long double cooling_rate;
         long double terminate_temp;
         long double convergence_factor;
+
+        std::shared_ptr<QCACircuit> circuit;
+
+        //run time states
+        Polarization output_p;
+        long double  output_diff;
+        Polarization neighbour_p;
+        long double  neighbour_diff;
+        Polarization best_p;
+        long double  best_diff;
 
 #ifndef NDBUG
         std::ofstream fs;

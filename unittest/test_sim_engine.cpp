@@ -42,8 +42,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
             input_p.insert(make_pair(make_pair(2, 0), 1));
             input_p.insert(make_pair(make_pair(4, 2), 1));
 
-            SimEngine engine(circuit, input_p);
-            engine.run_simulation();
+            SimEngine engine;
+            engine.set_circuit(circuit);
+            engine.run_simulation(input_p);
 
             THEN("we get the circuit output") {
                 REQUIRE(circuit->get_cell(2, 4)->cell_type == CellType::Output);

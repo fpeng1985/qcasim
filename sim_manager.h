@@ -25,8 +25,19 @@ namespace hfut {
         std::shared_ptr<QCACircuit> circuit;
 
         std::vector<QCACircuit::CircuitStructure> structures;
-    };
 
+
+
+    public:
+        class CombinationGenerator {
+        public:
+            void generate_combination(int n, std::vector<std::vector<int>> &combinations);
+
+        private:
+            void combine(const std::vector<int> &a, int n, std::vector<int> &b, int m, const int M, std::vector<std::vector<int>> &combinations);
+        };
+
+    };
 }
 
 #endif //QCASIM_SIMMANAGER_H

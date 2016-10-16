@@ -50,7 +50,8 @@ namespace hfut {
 
         int i=0;
         while ( sa_temp > terminate_temp && output_diff> convergence_factor ) {
-            make_anealing_iteration();
+            neighbour();
+            accept();
 
 #ifndef NDBUG
             fs << i  << "th iteration, diff is " << output_diff <<  endl;
@@ -102,11 +103,6 @@ namespace hfut {
         //initialize best state to current state
         best_p    = output_p;
         best_diff = output_diff;
-    }
-
-    void SimEngine::make_anealing_iteration() {
-        neighbour();
-        accept();
     }
 
     void SimEngine::neighbour() {

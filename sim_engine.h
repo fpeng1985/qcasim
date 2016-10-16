@@ -24,13 +24,10 @@ namespace hfut {
         void run_simulation(const Polarization &input_p);
 
     private:
-        //top level routine in sa algorithm
+        //high level routine in sa algorithm
         void set_input_polarization(const Polarization &pola) const;
         void set_output_polarization_randomly() const;
         void setup_runtime_states();
-        void make_anealing_iteration();
-
-        //middle level routine in sa algorithm
         void neighbour();
         void accept();
 

@@ -23,12 +23,14 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
             vector<vector<int>> combinations;
             comgen.generate_combination(10, combinations);
 
+            /*
             for (auto &comb : combinations) {
                 for (auto id : comb) {
                     cout << id << " ";
                 }
                 cout << endl;
             }
+             */
 
             manager.load_benchmark(mg1);
             THEN("we get the corresponding circuit structures") {

@@ -23,8 +23,7 @@ namespace hfut {
     }
 
     void SimManager::load_benchmark(const string &path) {
-        QCACircuit::CircuitStructure structure;
-        //read file into strings
+        //read benchmark file into list of string in reverse order
         ifstream ifs(path);
         list<string> lines;
         for (string line; getline(ifs, line);) {
@@ -32,18 +31,29 @@ namespace hfut {
         }
         ifs.close();
 
-        //convert string to CircuitStructure
+        //convert the list of string to CircuitStructure, changing row and column order
+        QCACircuit::CircuitStructure structure;
+        bool first_line = true;
         for (auto &line : lines) {
-            structure.emplace_back();
             istringstream iss(line);
-            copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(*structure.rbegin()));
+            if (first_line) {
+                for (string s; getline(iss, s, '\t');) {
+                    structure.emplace_back();
+                    structure.rbegin()->push_back(stoi(s));
+                }
+                first_line = false;
+            } else {
+                int i=0;
+                for (string s; getline(iss, s, '\t'); ++i) {
+                    structure[i].push_back(stoi(s));
+                }
+            }
         }
 
         //populate circuit
         circuit->populate_cells(structure);
 
         //generate all the circuit structures
-        structures.clear();
         structures.push_back(structure);
 
         //define helper types

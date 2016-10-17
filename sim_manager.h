@@ -26,8 +26,6 @@ namespace hfut {
 
         std::vector<QCACircuit::CircuitStructure> structures;
 
-
-
     public:
         class CombinationGenerator {
         public:

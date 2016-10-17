@@ -62,12 +62,12 @@ namespace hfut {
 
     void SimEngine::set_input_polarization(const Polarization &pola) const {
         for (auto &it : pola) {
-            auto &xidx = it.first.first;
-            auto &yidx = it.first.second;
+            auto &ridx = it.first.first;
+            auto &cidx = it.first.second;
 
-            assert(circuit->get_cell(xidx, yidx) != nullptr);
-            assert(circuit->get_cell(xidx, yidx)->cell_type == CellType::Input);
-            circuit->get_cell(xidx, yidx)->polarization = it.second;
+            assert(circuit->get_cell(ridx, cidx) != nullptr);
+            assert(circuit->get_cell(ridx, cidx)->cell_type == CellType::Input);
+            circuit->get_cell(ridx, cidx)->polarization = it.second;
         }
     }
 
@@ -86,13 +86,13 @@ namespace hfut {
     void SimEngine::setup_runtime_states() {
         //compute output_p
         shared_ptr<QCACell> cell;
-        int i=0;
-        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++i) {
-            int j=0;
-            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit, ++j) {
+        int r=0;
+        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++r) {
+            int c=0;
+            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit, ++c) {
                 cell = *cit;
                 if (cell != nullptr && cell->cell_type != CellType::Input) {
-                    output_p.insert(make_pair(make_pair(i, j), cell->polarization));
+                    output_p.insert(make_pair(make_pair(r, c), cell->polarization));
                 }
             }
         }
@@ -129,11 +129,11 @@ namespace hfut {
             output_diff = neighbour_diff;
 
             for (auto it=output_p.begin(); it!=output_p.end(); ++it) {
-                auto &xidx = it->first.first;
-                auto &yidx = it->first.second;
+                auto &ridx = it->first.first;
+                auto &cidx = it->first.second;
 
-                assert(circuit->get_cell(xidx, yidx) != nullptr);
-                circuit->get_cell(xidx, yidx)->polarization = it->second;
+                assert(circuit->get_cell(ridx, cidx) != nullptr);
+                circuit->get_cell(ridx, cidx)->polarization = it->second;
             }
 
             //check the quality of the accepted neighbour
@@ -153,72 +153,72 @@ namespace hfut {
         long double diff = 0;
 
         for (Polarization::const_iterator it=pola.begin(); it!=pola.end(); ++it) {
-            auto &xidx = it->first.first;
-            auto &yidx = it->first.second;
+            auto &ridx = it->first.first;
+            auto &cidx = it->first.second;
             const long double &cur_pola_val = it->second;
 
             shared_ptr<QCACell> curcell;
             long double sigma = 0;
 
             //type 1 neighbour cells
-            curcell = circuit->get_cell(xidx+1, yidx);
+            curcell = circuit->get_cell(ridx+1, cidx);
             if (curcell != nullptr) {
                 sigma += EK1 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx-1, yidx);
+            curcell = circuit->get_cell(ridx-1, cidx);
             if (curcell != nullptr) {
                 sigma += EK1 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx, yidx+1);
+            curcell = circuit->get_cell(ridx, cidx+1);
             if (curcell != nullptr) {
                 sigma += EK1 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx, yidx-1);
+            curcell = circuit->get_cell(ridx, cidx-1);
             if (curcell != nullptr) {
                 sigma += EK1 * curcell->polarization;
             }
 
             //type 2 neighbour cells
-            curcell = circuit->get_cell(xidx+2, yidx);
+            curcell = circuit->get_cell(ridx+2, cidx);
             if (curcell != nullptr) {
                 sigma += EK2 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx-2, yidx);
+            curcell = circuit->get_cell(ridx-2, cidx);
             if (curcell != nullptr) {
                 sigma += EK2 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx, yidx+2);
+            curcell = circuit->get_cell(ridx, cidx+2);
             if (curcell != nullptr) {
                 sigma += EK2 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx, yidx-2);
+            curcell = circuit->get_cell(ridx, cidx-2);
             if (curcell != nullptr) {
                 sigma += EK2 * curcell->polarization;
             }
 
             //type 3 neighbour cells
-            curcell = circuit->get_cell(xidx+1, yidx+1);
+            curcell = circuit->get_cell(ridx+1, cidx+1);
             if (curcell != nullptr) {
                 sigma += EK3 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx+1, yidx-1);
+            curcell = circuit->get_cell(ridx+1, cidx-1);
             if (curcell != nullptr) {
                 sigma += EK3 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx-1, yidx+1);
+            curcell = circuit->get_cell(ridx-1, cidx+1);
             if (curcell != nullptr) {
                 sigma += EK3 * curcell->polarization;
             }
 
-            curcell = circuit->get_cell(xidx-1, yidx-1);
+            curcell = circuit->get_cell(ridx-1, cidx-1);
             if (curcell != nullptr) {
                 sigma += EK3 * curcell->polarization;
             }

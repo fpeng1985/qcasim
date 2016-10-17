@@ -26,9 +26,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         circuit_structure_matrix[0] +=  0,  0, -1,  0,  0;
         circuit_structure_matrix[1] +=  0,  1,  1,  1,  0;
-        circuit_structure_matrix[2] += -1,  1,  1,  1, -1;
+        circuit_structure_matrix[2] += -1,  1,  1,  1, -2;
         circuit_structure_matrix[3] +=  0,  1,  1,  1,  0;
-        circuit_structure_matrix[4] +=  0,  0, -2,  0,  0;
+        circuit_structure_matrix[4] +=  0,  0, -1,  0,  0;
 
         circuit->populate_cells(circuit_structure_matrix);
 

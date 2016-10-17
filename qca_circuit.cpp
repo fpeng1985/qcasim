@@ -11,22 +11,22 @@ namespace hfut {
     void QCACircuit::populate_cells(const CircuitStructure &cell_structure_matrix) {
         clear();
 
-        for (size_t i=0; i<cell_structure_matrix.size(); ++i) {
+        for (size_t r=0; r<cell_structure_matrix.size(); ++r) {
             cells.push_back(vector<shared_ptr<QCACell>>());
 
-            for (size_t j=0; j<cell_structure_matrix[i].size(); ++j) {
-                switch (cell_structure_matrix[i][j]) {
+            for (size_t c=0; c<cell_structure_matrix[r].size(); ++c) {
+                switch (cell_structure_matrix[r][c]) {
                     case 0:
-                        cells[i].push_back(nullptr);
+                        cells[r].push_back(nullptr);
                         break;
                     case 1:
-                        cells[i].push_back(make_shared<QCACell>(i, j, 0, CellType::Normal));
+                        cells[r].push_back(make_shared<QCACell>(r, c, 0, CellType::Normal));
                         break;
                     case -1:
-                        cells[i].push_back(make_shared<QCACell>(i, j, 0, CellType::Input));
+                        cells[r].push_back(make_shared<QCACell>(r, c, 0, CellType::Input));
                         break;
                     case -2:
-                        cells[i].push_back(make_shared<QCACell>(i, j, 0, CellType::Output));
+                        cells[r].push_back(make_shared<QCACell>(r, c, 0, CellType::Output));
                         break;
                     default:
                         cerr << "Input format error!" << endl;
@@ -36,9 +36,9 @@ namespace hfut {
         }
     }
 
-    shared_ptr<QCACell> QCACircuit::get_cell(int i, int j) {
-        if (i>=0 && i<(cells.size()) && j>=0 && j<(cells[i].size())) {
-            return cells[i][j];
+    shared_ptr<QCACell> QCACircuit::get_cell(int r, int c) {
+        if (r>=0 && r<(cells.size()) && c>=0 && c<(cells[r].size())) {
+            return cells[r][c];
         } else {
             return nullptr;
         }

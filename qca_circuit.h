@@ -1,6 +1,9 @@
-//
-// Created by Administrator on 2016/10/13.
-//
+/*!
+ * \file qca_circuit.h
+ * \author Peng Fei
+ * \date 2016/10/13
+ * \brief QCACircuit definition
+ */
 
 #ifndef QCASIM_QCACIRCUIT_H
 #define QCASIM_QCACIRCUIT_H
@@ -15,15 +18,38 @@ namespace hfut {
 
     class QCACircuit {
     public:
+        /*!
+         * \typedef std::vector<std::vector<int>> CircuitStructure;
+         * \brief A temporary type for representing the QCACircuit's layout
+         */
         typedef std::vector<std::vector<int>> CircuitStructure;
 
+        /*!
+         * \typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::iterator RowIterator;
+         * \brief row iterator type for the 2d array of QCACircuit containing QCACells
+         */
         typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::iterator RowIterator;
+
+        /*!
+         * \typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::const_iterator RowConstIterator;
+         * \brief const row iterator type for the 2d array of QCACircuit containing QCACells
+         */
         typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::const_iterator RowConstIterator;
+
+        /*!
+         * \typedef std::vector<std::shared_ptr<QCACell>>::iterator ColIterator;
+         * \brief column iterator type for the 2d array of QCACircuit containing QCACells
+         */
         typedef std::vector<std::shared_ptr<QCACell>>::iterator ColIterator;
+
+        /*!
+         * \typedef std::vector<std::shared_ptr<QCACell>>::const_iterator ColConstIterator;
+         * \brief const column iterator type for the 2d array of QCACircuit containing QCACells
+         */
         typedef std::vector<std::shared_ptr<QCACell>>::const_iterator ColConstIterator;
 
         void populate_cells(const CircuitStructure &cell_structure_matrix);
-        std::shared_ptr<QCACell> get_cell(int i, int j);
+        std::shared_ptr<QCACell> get_cell(int r, int c);
 
         void clear();
 
@@ -59,6 +85,12 @@ namespace hfut {
         friend std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);
     };
 
+    /*!
+     * \fn std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);
+     * \brief A help function used for printing the QCACircuit
+     * \param out the output stream object
+     * \param circuit the circuit to be printed
+     */
     std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);
 
 }

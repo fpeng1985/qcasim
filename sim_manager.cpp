@@ -23,32 +23,19 @@ namespace hfut {
     }
 
     void SimManager::load_benchmark(const string &path) {
+        QCACircuit::CircuitStructure structure;
+
         //read benchmark file into list of string in reverse order
         ifstream ifs(path);
-        list<string> lines;
+        istringstream iss;
         for (string line; getline(ifs, line);) {
-            lines.push_front(line);//insert into the front
+            iss.str(line);
+            iss.seekg(0);
+
+            structure.emplace_back();
+            copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(*structure.rbegin()));
         }
         ifs.close();
-
-        //convert the list of string to CircuitStructure, changing row and column order
-        QCACircuit::CircuitStructure structure;
-        bool first_line = true;
-        for (auto &line : lines) {
-            istringstream iss(line);
-            if (first_line) {
-                for (string s; getline(iss, s, '\t');) {
-                    structure.emplace_back();
-                    structure.rbegin()->push_back(stoi(s));
-                }
-                first_line = false;
-            } else {
-                int i=0;
-                for (string s; getline(iss, s, '\t'); ++i) {
-                    structure[i].push_back(stoi(s));
-                }
-            }
-        }
 
         //populate circuit
         circuit->populate_cells(structure);
@@ -64,14 +51,14 @@ namespace hfut {
         IndexContainer indices;
 
         shared_ptr<QCACell> cell;
-        int i=0;
-        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++i) {
-            int j=0;
-            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit, ++j) {
+        int r=0;
+        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++r) {
+            int c=0;
+            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit, ++c) {
                 cell = *cit;
 
                 if (cell != nullptr && cell->cell_type==CellType::Normal) {
-                    indices.push_back(make_pair(i, j));
+                    indices.push_back(make_pair(r, c));
                 }
             }
         }
@@ -97,10 +84,10 @@ namespace hfut {
             QCACircuit::CircuitStructure &s = *structures.rbegin();
 
             for (auto &index : container) {
-                int &xidx = index.first;
-                int &yidx = index.second;
+                int &ridx = index.first;
+                int &cidx = index.second;
 
-                s[xidx][yidx] = 0;
+                s[ridx][cidx] = 0;
             }
         }
 

@@ -25,7 +25,7 @@ namespace hfut {
     void SimManager::load_benchmark(const string &path) {
         QCACircuit::CircuitStructure structure;
 
-        //read benchmark file into list of string in reverse order
+        //read benchmark file into structure, row by row, column by column
         ifstream ifs(path);
         istringstream iss;
         for (string line; getline(ifs, line);) {

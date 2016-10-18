@@ -45,7 +45,7 @@ namespace hfut {
         assert(circuit != nullptr);
 
         set_input_polarization(input_p);
-        set_output_polarization_randomly();
+        set_non_input_polarization_randomly();
         setup_runtime_states();
 
         int i=0;
@@ -71,7 +71,7 @@ namespace hfut {
         }
     }
 
-    void SimEngine::set_output_polarization_randomly() const {
+    void SimEngine::set_non_input_polarization_randomly() const {
         shared_ptr<QCACell> cell;
         for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
             for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit) {

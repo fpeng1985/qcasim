@@ -30,7 +30,7 @@ namespace hfut {
         sa_temp = 1000;
         cooling_rate = 0.9999;
         terminate_temp = 0.01;
-        convergence_factor = 1e-8;
+//        convergence_factor = 1e-8;
 
 #ifndef NDBUG
         fs.open(getenv("HOME") + string("/output.txt"));
@@ -49,12 +49,12 @@ namespace hfut {
         setup_runtime_states();
 
         int i=0;
-        while ( sa_temp > terminate_temp && output_diff> convergence_factor ) {
+        while ( sa_temp > terminate_temp ) {
             neighbour();
             accept();
 
 #ifndef NDBUG
-            fs << i  << "th iteration, diff is " << output_diff <<  endl;
+            fs << i  << "th iteration, diff is " << output_energy <<  endl;
             fs << *circuit << endl;
 #endif
         }
@@ -84,25 +84,28 @@ namespace hfut {
     }
 
     void SimEngine::setup_runtime_states() {
-        //compute output_p
         shared_ptr<QCACell> cell;
         int r=0;
         for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++r) {
             int c=0;
             for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit, ++c) {
                 cell = *cit;
-                if (cell != nullptr && cell->cell_type != CellType::Input) {
-                    output_p.insert(make_pair(make_pair(r, c), cell->polarization));
+                if (cell != nullptr) {
+                    if(cell->cell_type == CellType::Input) {
+                        input_p.insert(make_pair(make_pair(r, c), cell->polarization));
+                    } else {
+                        output_p.insert(make_pair(make_pair(r, c), cell->polarization));
+                    }
                 }
             }
         }
 
-        //compute output_diff
-        output_diff = compute_polarization_energy(output_p);
+        //compute output_energy
+        output_energy = compute_polarization_energy(output_p);
 
         //initialize best state to current state
         best_p    = output_p;
-        best_diff = output_diff;
+        best_diff = output_energy;
     }
 
     void SimEngine::neighbour() {
@@ -117,16 +120,16 @@ namespace hfut {
         it->second = fmod(it->second, 1);
 
         //compute diff value for neighbour
-        neighbour_diff = compute_polarization_energy(neighbour_p);
+        neighbour_energy = compute_polarization_energy(neighbour_p);
     }
 
     void SimEngine::accept() {
         //judge the acceptance of the neighbour
-        bool accept = compare_energy(output_diff, neighbour_diff);
+        bool accept = compare_energy(output_energy, neighbour_energy);
 
         if (accept) {
             output_p = neighbour_p;
-            output_diff = neighbour_diff;
+            output_energy = neighbour_energy;
 
             for (auto it=output_p.begin(); it!=output_p.end(); ++it) {
                 auto &ridx = it->first.first;
@@ -137,9 +140,9 @@ namespace hfut {
             }
 
             //check the quality of the accepted neighbour
-            if (neighbour_diff < best_diff) {
+            if (neighbour_energy < best_diff) {
                 best_p    = neighbour_p;
-                best_diff = neighbour_diff;
+                best_diff = neighbour_energy;
             }
         }
 
@@ -147,8 +150,114 @@ namespace hfut {
         sa_temp *= cooling_rate;
     }
 
+    long double SimEngine::compute_polarization_energy(const Polarization &output_p) const {
+        static constexpr long double pi = 3.14159265359;
+        static constexpr long double eps0 = 8.854e-12;
+        static constexpr long double epsr = 12.9;
+        static constexpr long double e = 1.602e-19;
+        static constexpr long double base_factor = 1/(4*pi*epsr*eps0) *10e30;
 
-    long double SimEngine::compute_polarization_energy(const Polarization &pola) const {
+        static const long double individual_factor = base_factor *(sqrt(2)-4)/9.0 * pow((e/2),2);
+        static const long double mutal_factor_1 = base_factor *
+                (1.0/5.0 + 2.0/sqrt(202) + 2.0/sqrt(922) -4.0/sqrt(481) -2.0/11 - 2.0/29) * pow((e/2), 2);
+        static const long double mutal_factor_2 = base_factor *
+                (1.0/10 + 2.0/sqrt(979) + 2.0/sqrt(2482) - 4/sqrt(1618) - 2.0/31 - 2.0/49) * pow((e/2), 2);
+        static const long double mutal_factor_3 = base_factor *
+                (1.0/sqrt(50) + 2.0/sqrt(962) + 1.0/sqrt(242) + 1.0/sqrt(1682) - 4.0/sqrt(1241) - 4.0/sqrt(521)) * pow((e/2), 2);
+
+        long double individual_energy = 0;
+        long double mutal_energy = 0;
+
+        //fill the input polarizations
+        Polarization pola = output_p;
+        for (auto &p : input_p) {
+            pola.insert(p);
+        }
+
+        for (Polarization::const_iterator it=pola.begin(); it!=pola.end(); ++it) {
+            auto &ridx = it->first.first;
+            auto &cidx = it->first.second;
+            const long double &cur_pola_val = it->second;
+
+            shared_ptr<QCACell> curcell;
+
+            //individual energy
+            curcell = circuit->get_cell(ridx, cidx);
+            assert(curcell != nullptr);
+//            cout << ridx << " " << cidx << " " << cur_pola_val << " " << circuit->get_cell(ridx, cidx)->polarization << endl;
+//            assert(cur_pola_val == circuit->get_cell(ridx, cidx)->polarization);
+
+            individual_energy += individual_factor * pow(cur_pola_val, 2);
+
+            //type 1 mutal energy
+            curcell = circuit->get_cell(ridx+1, cidx);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_1 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx-1, cidx);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_1 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx, cidx+1);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_1 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx, cidx-1);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_1 * cur_pola_val * curcell->polarization;
+            }
+
+            //type 2 mutal energy
+            curcell = circuit->get_cell(ridx+2, cidx);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_2 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx-2, cidx);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_2 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx, cidx+2);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_2 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx, cidx-2);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_2 * cur_pola_val * curcell->polarization;
+            }
+
+            //type 3 mutal energy
+            curcell = circuit->get_cell(ridx+1, cidx+1);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_3 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx+1, cidx-1);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_3 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx-1, cidx+1);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_3 * cur_pola_val * curcell->polarization;
+            }
+
+            curcell = circuit->get_cell(ridx-1, cidx-1);
+            if (curcell != nullptr) {
+                mutal_energy += mutal_factor_3 * cur_pola_val * curcell->polarization;
+            }
+        }
+
+        long double total_energy = individual_energy + mutal_energy/2.0;
+        return total_energy;
+    }
+
+    long double SimEngine::compute_polarization_difference(const Polarization &pola) const {
 
         long double diff = 0;
 
@@ -235,11 +344,11 @@ namespace hfut {
         return sqrt(diff);
     }
 
-    bool SimEngine::compare_energy(long double circuit_diff, long double neighbour_diff) const {
-        if (neighbour_diff < circuit_diff) {
+    bool SimEngine::compare_energy(long double circuit_energy, long double neighbour_energy) const {
+        if (neighbour_energy < circuit_energy) {
             return true;
         } else {
-            long double prob = exp((-1*output_diff) / sa_temp);
+            long double prob = exp((output_energy) / sa_temp);//please note output_energy is a negative value!!!
 #ifndef NDBUG
             const_cast<ofstream&>(fs) << string("enter judge mode") << endl;
             const_cast<ofstream&>(fs) << string("accept probability is ") << prob << endl;

@@ -32,9 +32,6 @@ namespace hfut {
         terminate_temp = 0.01;
         convergence_factor = 1e-8;
 
-#ifndef NDBUG
-        fs.open(getenv("HOME") + string("/output.txt"));
-#endif
     }
 
     void SimEngine::set_circuit(std::shared_ptr<QCACircuit> circuit) {
@@ -84,6 +81,12 @@ namespace hfut {
     }
 
     void SimEngine::setup_runtime_states() {
+#ifndef NDBUG
+        static int ii = 0;
+        string filename = "/output" + to_string(ii++) + ".txt";
+        fs.open(getenv("HOME") + filename);
+#endif
+
         shared_ptr<QCACell> cell;
         int r=0;
         for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++r) {
@@ -106,6 +109,8 @@ namespace hfut {
         //initialize best state to current state
         best_p    = output_p;
         best_energy = output_energy;
+
+        energy_scaling_factor = 10e10;
     }
 
     void SimEngine::neighbour() {
@@ -116,6 +121,34 @@ namespace hfut {
         auto it = neighbour_p.begin();
         advance(it, rand()%output_p.size());
 
+        long double rand_val = (rand() * 1.0 /RAND_MAX - 0.5) * 2;
+
+        auto &ridx = it->first.first;
+        auto &cidx = it->first.second;
+        long double avg_val = compute_polarization_from_neighbour_cells(ridx, cidx);
+
+        it->second = rand_val * sa_temp / 1000 +  avg_val * (1000 - sa_temp) / 1000;
+
+        //compute circuit convergence ratio
+        /*
+        long double ratio = 0;
+        int cell_cnt = 0;
+
+        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
+            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit) {
+                shared_ptr<QCACell> qcell = *cit;
+                if (qcell != nullptr) {
+                    ratio += fabs(qcell->polarization);
+                    ++cell_cnt;
+                }
+            }
+        }
+        ratio /= cell_cnt;
+        cout << ratio << endl;
+         */
+
+
+        /*
         it->second += (rand() * 1.0 / RAND_MAX - 0.5)*2  * sa_temp / 1000;//[-1, 1]
         assert(it->second <= 2.0 && it->second >= -2.0);
         if (it->second > 1) {
@@ -123,6 +156,9 @@ namespace hfut {
         } else if(it->second <-1) {
             it->second += 2;
         }
+         */
+
+//        it->second = (rand() * 1.0 / RAND_MAX - 0.5)*2;//[-1, 1]
 
         //compute energy value for neighbour
         neighbour_energy = compute_polarization_energy(neighbour_p);
@@ -160,7 +196,7 @@ namespace hfut {
         static constexpr long double eps0 = 8.854e-12;
         static constexpr long double epsr = 12.9;
         static constexpr long double e = 1.602e-19;
-        static constexpr long double base_factor = 1/(4*pi*epsr*eps0) *10e28;
+        static constexpr long double base_factor = 1/(4*pi*epsr*eps0);
 
         static const long double individual_factor = base_factor *(sqrt(2)-4)/9.0 * pow((e/2),2);
         static const long double mutal_factor_1 = base_factor *
@@ -256,10 +292,89 @@ namespace hfut {
             }
         }
 
-        long double total_energy = individual_energy + mutal_energy/2.0;
+        long double total_energy = (individual_energy + mutal_energy/2.0) * energy_scaling_factor;
         return total_energy;
     }
 
+    long double SimEngine::compute_polarization_from_neighbour_cells(int ridx, int cidx) const {
+        assert(circuit->get_cell(ridx, cidx) != nullptr);
+
+        shared_ptr<QCACell> curcell;
+
+        long double sigma = 0;
+
+        //type 1 neighbour cells
+        curcell = circuit->get_cell(ridx+1, cidx);
+        if (curcell != nullptr) {
+            sigma += EK1 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx-1, cidx);
+        if (curcell != nullptr) {
+            sigma += EK1 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx, cidx+1);
+        if (curcell != nullptr) {
+            sigma += EK1 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx, cidx-1);
+        if (curcell != nullptr) {
+            sigma += EK1 * curcell->polarization;
+        }
+
+        //type 2 neighbour cells
+        curcell = circuit->get_cell(ridx+2, cidx);
+        if (curcell != nullptr) {
+            sigma += EK2 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx-2, cidx);
+        if (curcell != nullptr) {
+            sigma += EK2 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx, cidx+2);
+        if (curcell != nullptr) {
+            sigma += EK2 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx, cidx-2);
+        if (curcell != nullptr) {
+            sigma += EK2 * curcell->polarization;
+        }
+
+        //type 3 neighbour cells
+        curcell = circuit->get_cell(ridx+1, cidx+1);
+        if (curcell != nullptr) {
+            sigma += EK3 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx+1, cidx-1);
+        if (curcell != nullptr) {
+            sigma += EK3 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx-1, cidx+1);
+        if (curcell != nullptr) {
+            sigma += EK3 * curcell->polarization;
+        }
+
+        curcell = circuit->get_cell(ridx-1, cidx-1);
+        if (curcell != nullptr) {
+            sigma += EK3 * curcell->polarization;
+        }
+
+        //sqrt of RI and sigma
+        long double tmp = sqrt(4*RI*RI + sigma*sigma);
+        //new polarization value
+        long double new_pola_val = sigma/tmp * tanh(tmp/(2*BOLTZMANN*QCA_TEMPERATURE));
+
+        return new_pola_val;
+    }
+
+    /*
     long double SimEngine::compute_polarization_difference(const Polarization &pola) const {
 
         long double diff = 0;
@@ -346,6 +461,7 @@ namespace hfut {
 
         return sqrt(diff);
     }
+     */
 
     bool SimEngine::compare_energy(long double circuit_energy, long double neighbour_energy) const {
         if (neighbour_energy < circuit_energy) {

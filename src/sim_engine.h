@@ -85,12 +85,14 @@ namespace hfut {
 
         long double compute_polarization_energy(const Polarization &output_p) const;
 
+        long double compute_polarization_from_neighbour_cells(int ridx, int cidx) const;
+
         /*!
          * \fn long double compute_polarization_energy(const Polarization &old_pola) const
          * \brief compute the polarization energy(difference between the inputed polarization to it's synthesised counterpart)
          * \param old_pola the inputed Polarization
          */
-        long double compute_polarization_difference(const Polarization &old_pola) const;
+//        long double compute_polarization_difference(const Polarization &old_pola) const;
 
         /*!
          * \fn bool compare_energy(long double circuit_diff, long double neighbour_diff) const
@@ -117,6 +119,8 @@ namespace hfut {
         long double  neighbour_energy;//!< the energy of the neighbour polarization
         Polarization best_p;//!< the currently best polarization
         long double  best_energy;//!< the energy of the currently best polarization
+
+        long double energy_scaling_factor;
 
 #ifndef NDBUG
         std::ofstream fs;//!< debug infomation file stream

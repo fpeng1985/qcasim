@@ -30,7 +30,7 @@ namespace hfut {
         sa_temp = 1000;
         cooling_rate = 0.9999;
         terminate_temp = 0.01;
-//        convergence_factor = 1e-8;
+        convergence_factor = 1e-8;
 
 #ifndef NDBUG
         fs.open(getenv("HOME") + string("/output.txt"));
@@ -54,7 +54,7 @@ namespace hfut {
             accept();
 
 #ifndef NDBUG
-            fs << i  << "th iteration, diff is " << output_energy <<  endl;
+            fs << i++  << "th iteration, energy is " << output_energy <<  endl;
             fs << *circuit << endl;
 #endif
         }
@@ -105,7 +105,7 @@ namespace hfut {
 
         //initialize best state to current state
         best_p    = output_p;
-        best_diff = output_energy;
+        best_energy = output_energy;
     }
 
     void SimEngine::neighbour() {
@@ -117,9 +117,14 @@ namespace hfut {
         advance(it, rand()%output_p.size());
 
         it->second += (rand() * 1.0 / RAND_MAX - 0.5)*2  * sa_temp / 1000;//[-1, 1]
-        it->second = fmod(it->second, 1);
+        assert(it->second <= 2.0 && it->second >= -2.0);
+        if (it->second > 1) {
+            it->second -= 2;
+        } else if(it->second <-1) {
+            it->second += 2;
+        }
 
-        //compute diff value for neighbour
+        //compute energy value for neighbour
         neighbour_energy = compute_polarization_energy(neighbour_p);
     }
 
@@ -140,9 +145,9 @@ namespace hfut {
             }
 
             //check the quality of the accepted neighbour
-            if (neighbour_energy < best_diff) {
+            if (neighbour_energy < best_energy) {
                 best_p    = neighbour_p;
-                best_diff = neighbour_energy;
+                best_energy = neighbour_energy;
             }
         }
 
@@ -155,7 +160,7 @@ namespace hfut {
         static constexpr long double eps0 = 8.854e-12;
         static constexpr long double epsr = 12.9;
         static constexpr long double e = 1.602e-19;
-        static constexpr long double base_factor = 1/(4*pi*epsr*eps0) *10e30;
+        static constexpr long double base_factor = 1/(4*pi*epsr*eps0) *10e28;
 
         static const long double individual_factor = base_factor *(sqrt(2)-4)/9.0 * pow((e/2),2);
         static const long double mutal_factor_1 = base_factor *
@@ -184,8 +189,6 @@ namespace hfut {
             //individual energy
             curcell = circuit->get_cell(ridx, cidx);
             assert(curcell != nullptr);
-//            cout << ridx << " " << cidx << " " << cur_pola_val << " " << circuit->get_cell(ridx, cidx)->polarization << endl;
-//            assert(cur_pola_val == circuit->get_cell(ridx, cidx)->polarization);
 
             individual_energy += individual_factor * pow(cur_pola_val, 2);
 

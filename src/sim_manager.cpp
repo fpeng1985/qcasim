@@ -18,7 +18,7 @@ namespace hfut {
     SimManager::SimManager() {
         circuit = make_shared<QCACircuit>();
 
-        engine = make_shared<SimEngine>();
+        engine = make_shared<SimulatedAnealingSimEngine>();
         engine->set_circuit(circuit);
     }
 

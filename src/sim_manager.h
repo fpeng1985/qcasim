@@ -31,7 +31,7 @@ namespace hfut {
         void load_benchmark(const std::string &path);
 
     private:
-        std::shared_ptr<SimEngine>  engine;//!< pointer to the simulation engine
+        std::shared_ptr<SimulatedAnealingSimEngine>  engine;//!< pointer to the simulation engine
         std::shared_ptr<QCACircuit> circuit;//!< pointer to the QCA circuit
 
         std::vector<QCACircuit::CircuitStructure> structures;//!< all the circuit structures generated from one benchmark

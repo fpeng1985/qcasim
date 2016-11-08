@@ -16,17 +16,25 @@
 #include <memory>
 
 namespace hfut {
-        /*!
-         * \typedef std::map<std::pair<int, int>, long double> Polarization
-         * \brief data structure mapping from (row, col) index to polarization
-         */
+
+    /*!
+     * \typedef std::map<std::pair<int, int>, long double> Polarization
+     * \brief data structure mapping from (row, col) index to polarization
+     */
     typedef std::map<std::pair<int, int>, long double> Polarization;
 
-    //! the simulated anealing simulation engine class
+    //! simulation engine base class
     class SimEngine {
     public:
-        //! SimEngine constructor setting the sa parameters etc
-        SimEngine();
+        //! SimEngine constructor
+        SimEngine() : circuit(nullptr) {}
+
+#ifndef NDBUG
+        //! SimEngine destructor
+        virtual ~SimEngine() {
+            fs.close();
+        }
+#endif
 
         /*!
          * \fn void set_circuit(std::shared_ptr<QCACircuit> circuit)
@@ -36,17 +44,13 @@ namespace hfut {
         void set_circuit(std::shared_ptr<QCACircuit> circuit);
 
         /*!
-         * \fn void run_simulation(const Polarization &input_p)
-         * \brief the main routine to simuate the circuit
+         * \fn virtual void run_simulation(const Polarization &input_p) = 0;
+         * \brief interface to the simuation engine
          * \param input_o a map of Polarization representing the circuit input
          */
-        void run_simulation(const Polarization &input_p);
+        virtual void run_simulation(const Polarization &input_p) = 0;
 
-    private:
-        /////////////////////////////////////////////////////////////////////////////////////////////
-        //////////////////////////high level routine in sa algorithm/////////////////////////////////
-        /////////////////////////////////////////////////////////////////////////////////////////////
-
+    protected:
         /*!
          * \fn void set_input_polarization(const Polarization &pola) const
          * \brief set the circuit input in polarization format
@@ -59,6 +63,37 @@ namespace hfut {
          * \brief set the circuit's normal and ouput cell's polarization randomly
          */
         void set_non_input_polarization_randomly() const;
+
+        /*!
+         * \fn long double compute_polarization_from_neighbour_cells(int ridx, int cidx) const;
+         * \brief compute the QCA cell's polarization indexed by (ridx, cidx) according to the formula
+         */
+        long double compute_polarization_from_neighbour_cells(int ridx, int cidx) const;
+
+        std::shared_ptr<QCACircuit> circuit;//!< the pointer to the QCA circuit to be simulated
+
+#ifndef NDBUG
+        std::ofstream fs;//!< debug infomation file stream
+#endif
+    };
+
+    //! the simulated anealing simulation engine class
+    class SimulatedAnealingSimEngine : public SimEngine {
+    public:
+        //! SimulatedAnealingSimEngine constructor setting the sa parameters etc
+        SimulatedAnealingSimEngine();
+
+        /*!
+         * \fn void run_simulation(const Polarization &input_p)
+         * \brief the main routine to simuate the circuit
+         * \param input_o a map of Polarization representing the circuit input
+         */
+        void run_simulation(const Polarization &input_p);
+
+    private:
+        /////////////////////////////////////////////////////////////////////////////////////////////
+        //////////////////////////high level routine in sa algorithm/////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////////////////
 
         /*!
          * \fn void setup_runtime_states()
@@ -83,16 +118,12 @@ namespace hfut {
         ////////////////////////////low level routin in sa algorithm/////////////////////////////////
         /////////////////////////////////////////////////////////////////////////////////////////////
 
-        long double compute_polarization_energy(const Polarization &output_p) const;
-
-        long double compute_polarization_from_neighbour_cells(int ridx, int cidx) const;
-
         /*!
-         * \fn long double compute_polarization_energy(const Polarization &old_pola) const
-         * \brief compute the polarization energy(difference between the inputed polarization to it's synthesised counterpart)
-         * \param old_pola the inputed Polarization
+         * \fn long double compute_polarization_energy(const Polarization &output_p) const
+         * \brief compute the polarization energy according to the formula
+         * \param output_p the non-input cells' Polarization
          */
-//        long double compute_polarization_difference(const Polarization &old_pola) const;
+        long double compute_polarization_energy(const Polarization &output_p) const;
 
         /*!
          * \fn bool compare_energy(long double circuit_diff, long double neighbour_diff) const
@@ -109,7 +140,6 @@ namespace hfut {
         long double terminate_temp;//!< the simulated anealing algorithm parameter representing terminating temperature
         long double convergence_factor;//!< when the current energy is smaller than the convergence factor, the algorithm will be terminated
 
-        std::shared_ptr<QCACircuit> circuit;//!< the pointer to the QCA circuit to be simulated
 
         //run time states
         Polarization input_p;//!< input cells's polarizations
@@ -121,11 +151,18 @@ namespace hfut {
         long double  best_energy;//!< the energy of the currently best polarization
 
         long double energy_scaling_factor;
-
-#ifndef NDBUG
-        std::ofstream fs;//!< debug infomation file stream
-#endif
     };
+
+    class IterativeSimEngine : public SimEngine {
+    public:
+        IterativeSimEngine();
+        void run_simulation(const Polarization &input_p);
+
+    private:
+
+
+    };
+
 
 }
 

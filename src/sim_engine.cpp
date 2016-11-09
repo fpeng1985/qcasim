@@ -15,14 +15,6 @@ namespace hfut {
 
     using namespace std;
 
-    const long double QCA_TEMPERATURE = 1.0L;
-    const long double RI = 3.8e-10L;
-    const long double BOLTZMANN = 1.38e-23L;
-
-    const long double EK1 = 2.3637e-22L;
-    const long double EK2 = 7.68e-24L;
-    const long double EK3 = -5.1638e-23L;
-
     void SimEngine::set_circuit(std::shared_ptr<QCACircuit> circuit) {
         this->circuit = circuit;
     }
@@ -51,6 +43,15 @@ namespace hfut {
     }
 
     long double SimEngine::compute_polarization_from_neighbour_cells(int ridx, int cidx) const {
+
+        static const long double QCA_TEMPERATURE = 1.0;
+        static const long double RI = 3.8e-23;
+        static const long double BOLTZMANN = 1.3806505e-23;
+
+        static const long double EK1 = 2.3637e-22;
+        static const long double EK2 = 7.068e-24;
+        static const long double EK3 = -5.1638e-23;
+
         assert(circuit->get_cell(ridx, cidx) != nullptr);
 
         shared_ptr<QCACell> curcell;
@@ -128,6 +129,86 @@ namespace hfut {
         return new_pola_val;
     }
 
+    void IterativeSimEngine::run_simulation(const Polarization &input_p) {
+        assert(circuit != nullptr);
+
+        set_input_polarization(input_p);
+        set_non_input_polarization_randomly();
+
+        static const long double convergence_factor = 1e-10;
+
+        shared_ptr<QCACell> cell = nullptr;
+        vector<tuple<int, int, long double>> old_pola;
+        vector<tuple<int, int, long double>> new_pola;
+        size_t cell_cnt = 0;
+        long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
+
+        for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
+            for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
+                cell = *cit;
+                if (cell != nullptr) {
+                    if (cell->cell_type == CellType::Input) continue;
+
+                    new_pola.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
+                    ++cell_cnt;
+                }
+            }
+        }
+
+#ifndef NDBUG
+        int loop_cnt = 0;
+        static int ii = 0;
+        string filename = "/iterative_output_" + to_string(ii++) + ".txt";
+        fs.open(getenv("HOME") + filename);
+#endif
+
+        do {
+            //[1]save current circuit state into old_pola
+            old_pola = new_pola;
+
+            //[2]compute new polarization according to the formula, and save the results into new_pola
+            new_pola.clear();
+            for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
+                for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
+                    cell = *cit;
+                    if (cell != nullptr) {
+                        if (cell->cell_type == CellType::Input) continue;
+
+                        auto &ridx = cell->r_index;
+                        auto &cidx = cell->c_index;
+
+                        auto pola_val = compute_polarization_from_neighbour_cells(ridx, cidx);
+
+                        new_pola.push_back(make_tuple(ridx, cidx, pola_val));
+                        cell->polarization = pola_val;//write back the newly computed polarization to the circuit
+                    }
+                }
+            }
+            assert(old_pola.size() == new_pola.size());
+
+            //[3]update convergence_val
+            long double diff_1 = 0;
+
+            for (size_t i = 0; i < old_pola.size(); ++i) {
+                auto &old_pola_val = get<2>(old_pola[i]);
+                auto &new_pola_val = get<2>(new_pola[i]);
+
+                diff_1 += pow(old_pola_val - new_pola_val, 2);
+            }
+
+            diff_1 = sqrt(diff_1);
+
+            convergence_val = diff_1;
+
+#ifndef NDBUG
+            fs << loop_cnt++ << "th iteration" << endl;
+            fs << "convergence_val : " << convergence_val << endl;
+            fs << *circuit << endl;
+#endif
+
+        } while (convergence_val > convergence_factor);//end while loop
+    }
+
     SimulatedAnealingSimEngine::SimulatedAnealingSimEngine() : SimEngine() {
         srand(time(0));
 
@@ -156,8 +237,6 @@ namespace hfut {
 #endif
         }
     }
-
-
 
     void SimulatedAnealingSimEngine::setup_runtime_states() {
 #ifndef NDBUG
@@ -344,96 +423,6 @@ namespace hfut {
         return total_energy;
     }
 
-
-    /*
-    long double SimulatedAnealingSimEngine::compute_polarization_difference(const Polarization &pola) const {
-
-        long double diff = 0;
-
-        for (Polarization::const_iterator it=pola.begin(); it!=pola.end(); ++it) {
-            auto &ridx = it->first.first;
-            auto &cidx = it->first.second;
-            const long double &cur_pola_val = it->second;
-
-            shared_ptr<QCACell> curcell;
-            long double sigma = 0;
-
-            //type 1 neighbour cells
-            curcell = circuit->get_cell(ridx+1, cidx);
-            if (curcell != nullptr) {
-                sigma += EK1 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx-1, cidx);
-            if (curcell != nullptr) {
-                sigma += EK1 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx, cidx+1);
-            if (curcell != nullptr) {
-                sigma += EK1 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx, cidx-1);
-            if (curcell != nullptr) {
-                sigma += EK1 * curcell->polarization;
-            }
-
-            //type 2 neighbour cells
-            curcell = circuit->get_cell(ridx+2, cidx);
-            if (curcell != nullptr) {
-                sigma += EK2 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx-2, cidx);
-            if (curcell != nullptr) {
-                sigma += EK2 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx, cidx+2);
-            if (curcell != nullptr) {
-                sigma += EK2 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx, cidx-2);
-            if (curcell != nullptr) {
-                sigma += EK2 * curcell->polarization;
-            }
-
-            //type 3 neighbour cells
-            curcell = circuit->get_cell(ridx+1, cidx+1);
-            if (curcell != nullptr) {
-                sigma += EK3 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx+1, cidx-1);
-            if (curcell != nullptr) {
-                sigma += EK3 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx-1, cidx+1);
-            if (curcell != nullptr) {
-                sigma += EK3 * curcell->polarization;
-            }
-
-            curcell = circuit->get_cell(ridx-1, cidx-1);
-            if (curcell != nullptr) {
-                sigma += EK3 * curcell->polarization;
-            }
-
-            //sqrt of RI and sigma
-            long double tmp = sqrt(4*RI*RI + sigma*sigma);
-            //new polarization value
-            long double new_pola_val = sigma/tmp * tanh(tmp/(2*BOLTZMANN*QCA_TEMPERATURE));
-
-            //update pola_from_neighbour and target_for_neighbour
-            diff += pow(new_pola_val-cur_pola_val, 2);
-        }
-
-        return sqrt(diff);
-    }
-     */
-
     bool SimulatedAnealingSimEngine::compare_energy(long double circuit_energy, long double neighbour_energy) const {
         if (neighbour_energy < circuit_energy) {
             return true;
@@ -457,74 +446,6 @@ namespace hfut {
         return false;
     }
 
-    IterativeSimEngine::IterativeSimEngine() : SimEngine() {}
 
-    void IterativeSimEngine::run_simulation(const Polarization &input_p) {
-        assert(circuit != nullptr);
-
-        set_input_polarization(input_p);
-        set_non_input_polarization_randomly();
-
-        static const long double convergence_factor = 1e-6;
-
-        shared_ptr<QCACell> cell = nullptr;
-        vector<tuple<int, int, long double>> old_pola;
-        vector<tuple<int, int, long double>> new_pola;
-        size_t cell_cnt = 0;
-        long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
-
-        for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
-            for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
-                cell = *cit;
-                if (cell != nullptr) {
-                    new_pola.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
-                    ++cell_cnt;
-                }
-            }
-        }
-
-        do {
-            //[1]save current circuit state into old_pola
-            old_pola = new_pola;
-
-            //[2]compute new polarization according to the formula, and save the results into new_pola
-            new_pola.clear();
-            for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
-                for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
-                    cell = *cit;
-                    if (cell != nullptr) {
-                        auto &ridx = cell->r_index;
-                        auto &cidx = cell->c_index;
-
-                        auto pola_val = compute_polarization_from_neighbour_cells(ridx, cidx);
-
-                        new_pola.push_back(make_tuple(ridx, cidx, pola_val));
-                    }
-                }
-            }
-            assert(old_pola.size() == new_pola.size());
-
-            //[3]write back the newly computed polarization to the circuit
-            int ridx, cidx;
-            long double pola_val;
-            for (auto &p : new_pola) {
-                tie(ridx, cidx, pola_val) = p;
-
-                assert(circuit->get_cell(ridx, cidx) != nullptr);
-                circuit->get_cell(ridx, cidx)->polarization = pola_val;
-            }
-
-            //[4]update convergence_val
-            convergence_val = 0;
-
-            for (size_t i = 0; i < old_pola.size(); ++i) {
-                auto &old_pola_val = get<2>(old_pola[i]);
-                auto &new_pola_val = get<2>(new_pola[i]);
-
-                convergence_val += pow(old_pola_val - new_pola_val, 2);
-            }
-
-        } while (convergence_val > convergence_factor);//end while loop
-    }
 
 }

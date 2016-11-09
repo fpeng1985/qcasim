@@ -48,9 +48,9 @@ namespace hfut {
          * \brief interface to the simuation engine
          * \param input_o a map of Polarization representing the circuit input
          */
-        virtual void run_simulation(const Polarization &input_p) = 0;
+        virtual void run_simulation(const Polarization &input_p) {};
 
-    protected:
+//    protected:
         /*!
          * \fn void set_input_polarization(const Polarization &pola) const
          * \brief set the circuit input in polarization format
@@ -75,6 +75,13 @@ namespace hfut {
 #ifndef NDBUG
         std::ofstream fs;//!< debug infomation file stream
 #endif
+    };
+
+    //! the iterative simulation engine class
+    class IterativeSimEngine : public SimEngine {
+    public:
+        IterativeSimEngine() : SimEngine() {};
+        void run_simulation(const Polarization &input_p);
     };
 
     //! the simulated anealing simulation engine class
@@ -151,16 +158,6 @@ namespace hfut {
         long double  best_energy;//!< the energy of the currently best polarization
 
         long double energy_scaling_factor;
-    };
-
-    class IterativeSimEngine : public SimEngine {
-    public:
-        IterativeSimEngine();
-        void run_simulation(const Polarization &input_p);
-
-    private:
-
-
     };
 
 

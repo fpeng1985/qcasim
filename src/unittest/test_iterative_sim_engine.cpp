@@ -35,7 +35,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         IterativeSimEngine engine;
         engine.set_circuit(circuit);
 
-        WHEN("we feed [0,0,0] to the IterativeSimEngine") {
+        WHEN("we feed [0,0,0] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
             input_p.insert(make_pair(make_pair(0, 2), -1));
             input_p.insert(make_pair(make_pair(2, 0), -1));
@@ -45,6 +45,97 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
             THEN("we get the circuit output") {
                 REQUIRE(circuit->get_cell(2, 4)->polarization < -0.5);
+            }
+        }
+
+        WHEN("we feed [0,0,1] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), -1));
+            input_p.insert(make_pair(make_pair(2, 0), -1));
+            input_p.insert(make_pair(make_pair(4, 2), 1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization < -0.5);
+            }
+        }
+
+        WHEN("we feed [0,1,0] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), -1));
+            input_p.insert(make_pair(make_pair(2, 0), 1));
+            input_p.insert(make_pair(make_pair(4, 2), -1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization < -0.5);
+            }
+        }
+
+        WHEN("we feed [0,1,1] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), -1));
+            input_p.insert(make_pair(make_pair(2, 0), 1));
+            input_p.insert(make_pair(make_pair(4, 2), 1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization > 0.5);
+            }
+        }
+
+        WHEN("we feed [1,0,0] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), 1));
+            input_p.insert(make_pair(make_pair(2, 0), -1));
+            input_p.insert(make_pair(make_pair(4, 2), -1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization < -0.5);
+            }
+        }
+
+        WHEN("we feed [1,0,1] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), 1));
+            input_p.insert(make_pair(make_pair(2, 0), -1));
+            input_p.insert(make_pair(make_pair(4, 2), 1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization > 0.5);
+            }
+        }
+
+        WHEN("we feed [1,1,0] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), 1));
+            input_p.insert(make_pair(make_pair(2, 0), 1));
+            input_p.insert(make_pair(make_pair(4, 2), -1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization > 0.5);
+            }
+        }
+
+        WHEN("we feed [1,1,1] to the SimulatedAnealingSimEngine") {
+            Polarization input_p;
+            input_p.insert(make_pair(make_pair(0, 2), 1));
+            input_p.insert(make_pair(make_pair(2, 0), 1));
+            input_p.insert(make_pair(make_pair(4, 2), 1));
+
+            engine.run_simulation(input_p);
+
+            THEN("we get the circuit output") {
+                REQUIRE(circuit->get_cell(2, 4)->polarization > 0.5);
             }
         }
     }

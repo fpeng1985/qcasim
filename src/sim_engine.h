@@ -13,6 +13,7 @@
 #include <fstream>
 #include <vector>
 #include <map>
+#include <tuple>
 #include <memory>
 
 namespace hfut {
@@ -21,7 +22,8 @@ namespace hfut {
      * \typedef std::map<std::pair<int, int>, long double> Polarization
      * \brief data structure mapping from (row, col) index to polarization
      */
-    typedef std::map<std::pair<int, int>, long double> Polarization;
+//    typedef std::map<std::pair<int, int>, long double> Polarization;
+    typedef std::vector<std::tuple<int, int, long double>> Polarization;
 
     //! simulation engine base class
     class SimEngine {
@@ -56,7 +58,7 @@ namespace hfut {
          * \brief set the circuit input in polarization format
          * \param pola a map of Polarization representing the circuit input
          */
-        void set_input_polarization(const Polarization &pola) const;
+        void set_input_polarization(const Polarization &input_p) const;
 
         /*!
          * \fn void set_output_polarization_randomly() const
@@ -159,7 +161,6 @@ namespace hfut {
 
         long double energy_scaling_factor;
     };
-
 
 }
 

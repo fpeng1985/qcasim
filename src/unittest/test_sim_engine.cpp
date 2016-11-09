@@ -29,7 +29,7 @@ SCENARIO("2 cells case 1", "[2 cells case 1]") {
 
         WHEN("we feed [1] to the SimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 0), 1));
+            input_p.push_back(make_tuple(0,0,1));
 
             engine.set_input_polarization(input_p);
             engine.set_non_input_polarization_randomly();
@@ -63,7 +63,7 @@ SCENARIO("2 cells case 2", "[2 cells case 2") {
 
         WHEN("we feed [1] to the SimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 0), 1));
+            input_p.push_back(make_tuple(0,0,1));
 
             engine.set_input_polarization(input_p);
             engine.set_non_input_polarization_randomly();
@@ -102,7 +102,7 @@ SCENARIO("2 cells case 3", "[2 cells case 3]") {
 
         WHEN("we feed [1] to the SimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(1, 0), 1));
+            input_p.push_back(make_tuple(1, 0, 1));
 
             engine.set_input_polarization(input_p);
             engine.set_non_input_polarization_randomly();

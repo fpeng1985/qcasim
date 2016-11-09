@@ -48,9 +48,9 @@ int main(int argc, char *argv[]) {
         int p3 = 2*bit3-1;
 
         Polarization input_p;
-        input_p.insert(make_pair(make_pair(0,2), p1));
-        input_p.insert(make_pair(make_pair(2,0), p2));
-        input_p.insert(make_pair(make_pair(4,2), p3));
+        input_p.push_back(make_tuple(0,2,p1));
+        input_p.push_back(make_tuple(2,0,p2));
+        input_p.push_back(make_tuple(4,2,p3));
 
         //run simulation
         engine.run_simulation(input_p);

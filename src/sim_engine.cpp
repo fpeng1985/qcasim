@@ -19,14 +19,16 @@ namespace hfut {
         this->circuit = circuit;
     }
 
-    void SimEngine::set_input_polarization(const Polarization &pola) const {
-        for (auto &it : pola) {
-            auto &ridx = it.first.first;
-            auto &cidx = it.first.second;
+    void SimEngine::set_input_polarization(const Polarization &input_p) const {
+        int ridx, cidx;
+        long double pola_val;
+
+        for (auto &p : input_p) {
+            tie(ridx, cidx, pola_val) = p;
 
             assert(circuit->get_cell(ridx, cidx) != nullptr);
             assert(circuit->get_cell(ridx, cidx)->cell_type == CellType::Input);
-            circuit->get_cell(ridx, cidx)->polarization = it.second;
+            circuit->get_cell(ridx, cidx)->polarization = pola_val;
         }
     }
 
@@ -138,8 +140,8 @@ namespace hfut {
         static const long double convergence_factor = 1e-10;
 
         shared_ptr<QCACell> cell = nullptr;
-        vector<tuple<int, int, long double>> old_pola;
-        vector<tuple<int, int, long double>> new_pola;
+        Polarization old_pola;
+        Polarization new_pola;
         size_t cell_cnt = 0;
         long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
 
@@ -253,9 +255,9 @@ namespace hfut {
                 cell = *cit;
                 if (cell != nullptr) {
                     if(cell->cell_type == CellType::Input) {
-                        input_p.insert(make_pair(make_pair(r, c), cell->polarization));
+                        input_p.push_back(make_tuple(r,c,cell->polarization));
                     } else {
-                        output_p.insert(make_pair(make_pair(r, c), cell->polarization));
+                        output_p.push_back(make_tuple(r,c,cell->polarization));
                     }
                 }
             }
@@ -281,11 +283,13 @@ namespace hfut {
 
         long double rand_val = (rand() * 1.0 /RAND_MAX - 0.5) * 2;
 
-        auto &ridx = it->first.first;
-        auto &cidx = it->first.second;
+        int ridx, cidx;
+        long double pola_val;
+        tie(ridx, cidx, pola_val) = *it;
+
         long double avg_val = compute_polarization_from_neighbour_cells(ridx, cidx);
 
-        it->second = rand_val * sa_temp / 1000 +  avg_val * (1000 - sa_temp) / 1000;
+        get<2>(*it) = rand_val * sa_temp / 1000 +  avg_val * (1000 - sa_temp) / 1000;
 
         //compute energy value for neighbour
         neighbour_energy = compute_polarization_energy(neighbour_p);
@@ -300,11 +304,12 @@ namespace hfut {
             output_energy = neighbour_energy;
 
             for (auto it=output_p.begin(); it!=output_p.end(); ++it) {
-                auto &ridx = it->first.first;
-                auto &cidx = it->first.second;
+                int ridx, cidx;
+                long double pola_val;
+                tie(ridx, cidx, pola_val) = *it;
 
                 assert(circuit->get_cell(ridx, cidx) != nullptr);
-                circuit->get_cell(ridx, cidx)->polarization = it->second;
+                circuit->get_cell(ridx, cidx)->polarization = pola_val;
             }
 
             //check the quality of the accepted neighbour
@@ -339,13 +344,13 @@ namespace hfut {
         //fill the input polarizations
         Polarization pola = output_p;
         for (auto &p : input_p) {
-            pola.insert(p);
+            pola.push_back(p);
         }
 
+        int ridx, cidx;
+        long double cur_pola_val;
         for (Polarization::const_iterator it=pola.begin(); it!=pola.end(); ++it) {
-            auto &ridx = it->first.first;
-            auto &cidx = it->first.second;
-            const long double &cur_pola_val = it->second;
+            tie(ridx, cidx, cur_pola_val) = *it;
 
             shared_ptr<QCACell> curcell;
 

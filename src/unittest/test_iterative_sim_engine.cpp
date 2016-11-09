@@ -37,9 +37,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [0,0,0] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), -1));
-            input_p.insert(make_pair(make_pair(2, 0), -1));
-            input_p.insert(make_pair(make_pair(4, 2), -1));
+            input_p.push_back(make_tuple(0, 2, -1));
+            input_p.push_back(make_tuple(2, 0, -1));
+            input_p.push_back(make_tuple(4, 2, -1));
 
             engine.run_simulation(input_p);
 
@@ -50,9 +50,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [0,0,1] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), -1));
-            input_p.insert(make_pair(make_pair(2, 0), -1));
-            input_p.insert(make_pair(make_pair(4, 2), 1));
+            input_p.push_back(make_tuple(0, 2, -1));
+            input_p.push_back(make_tuple(2, 0, -1));
+            input_p.push_back(make_tuple(4, 2, 1));
 
             engine.run_simulation(input_p);
 
@@ -63,9 +63,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [0,1,0] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), -1));
-            input_p.insert(make_pair(make_pair(2, 0), 1));
-            input_p.insert(make_pair(make_pair(4, 2), -1));
+            input_p.push_back(make_tuple(0, 2, -1));
+            input_p.push_back(make_tuple(2, 0, 1));
+            input_p.push_back(make_tuple(4, 2, -1));
 
             engine.run_simulation(input_p);
 
@@ -76,9 +76,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [0,1,1] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), -1));
-            input_p.insert(make_pair(make_pair(2, 0), 1));
-            input_p.insert(make_pair(make_pair(4, 2), 1));
+            input_p.push_back(make_tuple(0, 2, -1));
+            input_p.push_back(make_tuple(2, 0, 1));
+            input_p.push_back(make_tuple(4, 2, 1));
 
             engine.run_simulation(input_p);
 
@@ -89,9 +89,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [1,0,0] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), 1));
-            input_p.insert(make_pair(make_pair(2, 0), -1));
-            input_p.insert(make_pair(make_pair(4, 2), -1));
+            input_p.push_back(make_tuple(0, 2, 1));
+            input_p.push_back(make_tuple(2, 0, -1));
+            input_p.push_back(make_tuple(4, 2, -1));
 
             engine.run_simulation(input_p);
 
@@ -102,9 +102,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [1,0,1] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), 1));
-            input_p.insert(make_pair(make_pair(2, 0), -1));
-            input_p.insert(make_pair(make_pair(4, 2), 1));
+            input_p.push_back(make_tuple(0, 2, 1));
+            input_p.push_back(make_tuple(2, 0, -1));
+            input_p.push_back(make_tuple(4, 2, 1));
 
             engine.run_simulation(input_p);
 
@@ -115,9 +115,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [1,1,0] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), 1));
-            input_p.insert(make_pair(make_pair(2, 0), 1));
-            input_p.insert(make_pair(make_pair(4, 2), -1));
+            input_p.push_back(make_tuple(0, 2, 1));
+            input_p.push_back(make_tuple(2, 0, 1));
+            input_p.push_back(make_tuple(4, 2, -1));
 
             engine.run_simulation(input_p);
 
@@ -128,9 +128,9 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
 
         WHEN("we feed [1,1,1] to the SimulatedAnealingSimEngine") {
             Polarization input_p;
-            input_p.insert(make_pair(make_pair(0, 2), 1));
-            input_p.insert(make_pair(make_pair(2, 0), 1));
-            input_p.insert(make_pair(make_pair(4, 2), 1));
+            input_p.push_back(make_tuple(0, 2, 1));
+            input_p.push_back(make_tuple(2, 0, 1));
+            input_p.push_back(make_tuple(4, 2, 1));
 
             engine.run_simulation(input_p);
 

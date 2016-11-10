@@ -16,6 +16,12 @@
 
 namespace hfut {
 
+    /*!
+     * \typedef std::vector<std::tuple<int, int, long double>> Polarization;
+     * \brief tuple data structure containing (row, col) index and polarization information
+     */
+    typedef std::vector<std::tuple<int, int, long double>> Polarization;
+
     //! class representing the QCA circuit
     class QCACircuit {
     public:
@@ -232,6 +238,10 @@ namespace hfut {
          * \brief clear the internal data structures
          */
         void clear();
+
+        Polarization &&get_input_polarizations() const;
+
+        Polarization &&get_output_polarizations() const;
         /////////////////////////////////////////////////////////////////////////////////////////////
 
     private:

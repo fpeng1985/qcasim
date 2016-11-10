@@ -18,13 +18,7 @@
 
 namespace hfut {
 
-    /*!
-     * \typedef std::vector<std::tuple<int, int, long double>> Polarization;
-     * \brief tuple data structure containing (row, col) index and polarization information
-     */
-    typedef std::vector<std::tuple<int, int, long double>> Polarization;
-
-    //! simulation engine base class
+    //! simulation engine base class, has a default implementation
     class SimEngine {
     public:
         //! SimEngine constructor

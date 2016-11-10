@@ -48,6 +48,38 @@ namespace hfut {
         cells.clear();
     }
 
+    Polarization &&QCACircuit::get_input_polarizations() const {
+        Polarization input_p;
+        shared_ptr<QCACell> cell = nullptr;
+
+        for (auto rit=cells.begin(); rit!=cells.end(); ++rit) {
+            for (auto cit=rit->begin(); cit!=rit->end(); ++cit) {
+                cell = *cit;
+                if (cell != nullptr && cell->cell_type == CellType::Input) {
+                    input_p.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
+                }
+            }
+        }
+
+        return move(input_p);
+    }
+
+    Polarization &&QCACircuit::get_output_polarizations() const {
+        Polarization input_p;
+        shared_ptr<QCACell> cell = nullptr;
+
+        for (auto rit=cells.begin(); rit!=cells.end(); ++rit) {
+            for (auto cit=rit->begin(); cit!=rit->end(); ++cit) {
+                cell = *cit;
+                if (cell != nullptr && cell->cell_type == CellType::Output) {
+                    input_p.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
+                }
+            }
+        }
+
+        return move(input_p);
+    }
+
     ostream & operator<<(ostream &out, const QCACircuit &circuit) {
         out << "=========================================================================================" << endl;
         for (auto rit=circuit.row_begin(); rit!=circuit.row_end(); ++rit) {

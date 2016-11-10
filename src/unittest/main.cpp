@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
         int p2 = 2*bit2-1;
         int p3 = 2*bit3-1;
 
-        Polarization input_p;
+        PolarizationList input_p;
         input_p.push_back(make_tuple(0,2,p1));
         input_p.push_back(make_tuple(2,0,p2));
         input_p.push_back(make_tuple(4,2,p3));

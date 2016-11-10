@@ -48,8 +48,8 @@ namespace hfut {
         cells.clear();
     }
 
-    Polarization &&QCACircuit::get_input_polarizations() const {
-        Polarization input_p;
+    PolarizationList &&QCACircuit::get_input_polarizations() const {
+        PolarizationList input_p;
         shared_ptr<QCACell> cell = nullptr;
 
         for (auto rit=cells.begin(); rit!=cells.end(); ++rit) {
@@ -64,8 +64,8 @@ namespace hfut {
         return move(input_p);
     }
 
-    Polarization &&QCACircuit::get_output_polarizations() const {
-        Polarization input_p;
+    PolarizationList &&QCACircuit::get_output_polarizations() const {
+        PolarizationList input_p;
         shared_ptr<QCACell> cell = nullptr;
 
         for (auto rit=cells.begin(); rit!=cells.end(); ++rit) {

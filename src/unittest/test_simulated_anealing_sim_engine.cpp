@@ -36,7 +36,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         engine.set_circuit(circuit);
 
         WHEN("we feed [0,0,0] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -49,7 +49,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [0,0,1] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, 1));
@@ -62,7 +62,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [0,1,0] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -75,7 +75,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [0,1,1] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, 1));
@@ -88,7 +88,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,0,0] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -101,7 +101,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,0,1] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, 1));
@@ -114,7 +114,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,1,0] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -127,7 +127,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,1,1] to the SimulatedAnealingSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, 1));

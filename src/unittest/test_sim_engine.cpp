@@ -25,7 +25,7 @@ SCENARIO("2 cells case 1", "[2 cells case 1]") {
     engine.set_circuit(circuit);
 
     GIVEN("a input polarization") {
-        Polarization input_p;
+        PolarizationList input_p;
         input_p.push_back(make_tuple(0,0,1));
 
         WHEN("we run simulation") {
@@ -51,7 +51,7 @@ SCENARIO("2 cells case 2", "[2 cells case 2]") {
     engine.set_circuit(circuit);
 
     GIVEN("a input polarization") {
-        Polarization input_p;
+        PolarizationList input_p;
         input_p.push_back(make_tuple(0,0,1));
 
         WHEN("we run simulation") {
@@ -79,7 +79,7 @@ SCENARIO("2 cells case 3", "[2 cells case 3]") {
     engine.set_circuit(circuit);
 
     GIVEN("a input polarization") {
-        Polarization input_p;
+        PolarizationList input_p;
         input_p.push_back(make_tuple(1,0,1));
 
         WHEN("we run simulation") {
@@ -116,7 +116,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         engine.set_circuit(circuit);
 
         WHEN("we feed [0,0,0] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -129,7 +129,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [0,0,1] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, 1));
@@ -142,7 +142,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [0,1,0] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -155,7 +155,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [0,1,1] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, -1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, 1));
@@ -168,7 +168,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,0,0] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -181,7 +181,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,0,1] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, -1));
             input_p.push_back(make_tuple(4, 2, 1));
@@ -194,7 +194,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,1,0] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, -1));
@@ -207,7 +207,7 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
 
         WHEN("we feed [1,1,1] to the IterativeSimEngine") {
-            Polarization input_p;
+            PolarizationList input_p;
             input_p.push_back(make_tuple(0, 2, 1));
             input_p.push_back(make_tuple(2, 0, 1));
             input_p.push_back(make_tuple(4, 2, 1));

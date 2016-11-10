@@ -19,7 +19,7 @@ namespace hfut {
         this->circuit = circuit;
     }
 
-    void SimEngine::run_simulation(const Polarization &input_p) {
+    void SimEngine::run_simulation(const PolarizationList &input_p) {
         assert(circuit != nullptr);
 
         set_input_polarization(input_p);
@@ -28,8 +28,8 @@ namespace hfut {
         static const long double convergence_factor = 1e-10;
 
         shared_ptr<QCACell> cell = nullptr;
-        Polarization old_pola;
-        Polarization new_pola;
+        PolarizationList old_pola;
+        PolarizationList new_pola;
         size_t cell_cnt = 0;
         long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
 
@@ -99,7 +99,7 @@ namespace hfut {
         } while (convergence_val > convergence_factor);//end while loop
     }
 
-    void SimEngine::set_input_polarization(const Polarization &input_p) const {
+    void SimEngine::set_input_polarization(const PolarizationList &input_p) const {
         int ridx, cidx;
         long double pola_val;
 
@@ -236,7 +236,7 @@ namespace hfut {
         srand(time(0));
     }
 
-    void SimulatedAnealingSimEngine::run_simulation(const Polarization &input_p) {
+    void SimulatedAnealingSimEngine::run_simulation(const PolarizationList &input_p) {
         assert(circuit != nullptr);
 
         set_input_polarization(input_p);
@@ -356,7 +356,7 @@ namespace hfut {
         sa_temp *= cooling_rate;
     }
 
-    long double SimulatedAnealingSimEngine::compute_polarization_energy(const Polarization &output_p) const {
+    long double SimulatedAnealingSimEngine::compute_polarization_energy(const PolarizationList &output_p) const {
         static constexpr long double pi = 3.14159265359;
         static constexpr long double eps0 = 8.854e-12;
         static constexpr long double epsr = 12.9;
@@ -375,14 +375,14 @@ namespace hfut {
         long double mutal_energy = 0;
 
         //fill the input polarizations
-        Polarization pola = output_p;
+        PolarizationList pola = output_p;
         for (auto &p : input_p) {
             pola.push_back(p);
         }
 
         int ridx, cidx;
         long double cur_pola_val;
-        for (Polarization::const_iterator it=pola.begin(); it!=pola.end(); ++it) {
+        for (PolarizationList::const_iterator it=pola.begin(); it!=pola.end(); ++it) {
             tie(ridx, cidx, cur_pola_val) = *it;
 
             shared_ptr<QCACell> curcell;

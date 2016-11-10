@@ -45,6 +45,30 @@ namespace hfut {
         typedef std::vector<std::shared_ptr<QCACell>>::const_iterator ColConstIterator;
 
         /*!
+         * \typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::reverse_iterator ReverseRowIterator;
+         * \brief reverse row iterator type for the 2d array of QCACircuit containing QCACells
+         */
+        typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::reverse_iterator ReverseRowIterator;
+
+        /*!
+         * \typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::const_reverse_iterator ReverseRowConstIterator;
+         * \brief const reverse row iterator type for the 2d array of QCACircuit containing QCACells
+         */
+        typedef std::vector<std::vector<std::shared_ptr<QCACell>>>::const_reverse_iterator ReverseRowConstIterator;
+
+        /*!
+         * \typedef std::vector<std::shared_ptr<QCACell>>::reverse_iterator ReverseColIterator;
+         * \brief reverse column iterator type for the 2d array of QCACircuit containing QCACells
+         */
+        typedef std::vector<std::shared_ptr<QCACell>>::reverse_iterator ReverseColIterator;
+
+        /*!
+         * \typedef std::vector<std::shared_ptr<QCACell>>::const_reverse_iterator ReverseColConstIterator;
+         * \brief const reverse column iterator type for the 2d array of QCACircuit containing QCACells
+         */
+        typedef std::vector<std::shared_ptr<QCACell>>::const_reverse_iterator ReverseColConstIterator;
+
+        /*!
          * \fn inline RowIterator row_begin()
          * \brief row begin iterator
          */
@@ -110,6 +134,74 @@ namespace hfut {
          */
         inline ColConstIterator col_end(const RowConstIterator &it)const {
             return it->cend();
+        }
+
+        /*!
+         * \fn inline ReverseRowIterator row_rbegin()
+         * \brief reverse row begin iterator
+         */
+        inline ReverseRowIterator row_rbegin() {
+            return cells.rbegin();
+        }
+
+        /*!
+         * \fn inline ReverseRowIterator row_rend()
+         * \brief reverse row end iterator
+         */
+        inline ReverseRowIterator row_rend() {
+            return cells.rend();
+        }
+
+        /*!
+         * \fn inline ReverseRowConstIterator row_rbegin()const
+         * \brief reverse row begin iterator, const version
+         */
+        inline ReverseRowConstIterator row_rbegin()const {
+            return cells.crbegin();
+        }
+
+        /*!
+         * \fn inline ReverseRowConstIterator row_rend()const
+         * \brief reverse row end iterator, const version
+         */
+        inline ReverseRowConstIterator row_rend()const {
+            return cells.crend();
+        }
+
+        /*!
+         * \fn inline ReverseColterator col_rbegin(const ReverseRowIterator &it)
+         * \brief reverse column begin iterator
+         * \param it row iterator representing the current queried row
+         */
+        inline ReverseColIterator col_rbegin(const ReverseRowIterator &it) {
+            return it->rbegin();
+        }
+
+        /*!
+         * \fn inline ReverseColterator col_rend(const ReverseRowIterator &it)
+         * \brief reverse column end iterator
+         * \param it row iterator representing the current queried row
+         */
+        inline ReverseColIterator col_rend(const ReverseRowIterator &it) {
+            return it->rend();
+        }
+
+        /*!
+         * \fn inline ReverseColConstIterator col_rbegin(const ReverseRowConstIterator &it) const
+         * \brief reverse column begin iterator, const version
+         * \param it row iterator representing the current queried row
+         */
+        inline ReverseColConstIterator col_rbegin(const ReverseRowConstIterator &it)const {
+            return it->crbegin();
+        }
+
+        /*!
+         * \fn inline ReverseColConstIterator col_end(const ReverseRowConstIterator &it) const
+         * \brief reverse column end iterator, const version
+         * \param it row iterator representing the current queried row
+         */
+        inline ReverseColConstIterator col_rend(const ReverseRowConstIterator &it)const {
+            return it->crend();
         }
         /////////////////////////////////////////////////////////////////////////////////////////////
 

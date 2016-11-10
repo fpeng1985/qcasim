@@ -19,6 +19,86 @@ namespace hfut {
         this->circuit = circuit;
     }
 
+    void SimEngine::run_simulation(const Polarization &input_p) {
+        assert(circuit != nullptr);
+
+        set_input_polarization(input_p);
+        set_non_input_polarization_zero();
+
+        static const long double convergence_factor = 1e-10;
+
+        shared_ptr<QCACell> cell = nullptr;
+        Polarization old_pola;
+        Polarization new_pola;
+        size_t cell_cnt = 0;
+        long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
+
+        for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
+            for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
+                cell = *cit;
+                if (cell != nullptr) {
+                    if (cell->cell_type == CellType::Input) continue;
+
+                    new_pola.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
+                    ++cell_cnt;
+                }
+            }
+        }
+
+#ifndef NDBUG
+        int loop_cnt = 0;
+        static int ii = 0;
+        string filename = "/iterative_output_" + to_string(ii++) + ".txt";
+        fs.open(getenv("HOME") + filename);
+#endif
+
+        do {
+            //[1]save current circuit state into old_pola
+            old_pola = new_pola;
+
+            //[2]compute new polarization according to the formula, and save the results into new_pola
+            new_pola.clear();
+            for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
+                for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
+                    cell = *cit;
+                    if (cell != nullptr) {
+                        if (cell->cell_type == CellType::Input) continue;
+
+                        auto &ridx = cell->r_index;
+                        auto &cidx = cell->c_index;
+
+                        auto pola_val = compute_polarization_from_neighbour_cells(ridx, cidx);
+
+                        new_pola.push_back(make_tuple(ridx, cidx, pola_val));
+                        cell->polarization = pola_val;//write back the newly computed polarization to the circuit
+                    }
+                }
+            }
+            assert(old_pola.size() == new_pola.size());
+
+            //[3]update convergence_val
+            long double diff_1 = 0;
+
+            for (size_t i = 0; i < old_pola.size(); ++i) {
+                auto &old_pola_val = get<2>(old_pola[i]);
+                auto &new_pola_val = get<2>(new_pola[i]);
+
+                diff_1 += pow(old_pola_val - new_pola_val, 2);
+            }
+
+            diff_1 = sqrt(diff_1);
+
+            convergence_val = diff_1;
+
+#ifndef NDBUG
+            fs << loop_cnt++ << "th iteration" << endl;
+            fs << "convergence_val : " << convergence_val << endl;
+            fs << *circuit << endl;
+#endif
+
+        } while (convergence_val > convergence_factor);//end while loop
+    }
+
     void SimEngine::set_input_polarization(const Polarization &input_p) const {
         int ridx, cidx;
         long double pola_val;
@@ -143,121 +223,14 @@ namespace hfut {
         return new_pola_val;
     }
 
-    //Iterative Algorithm
-    /*
-    void IterativeSimEngine::run_simulation(const Polarization &input_p) {
-        assert(circuit != nullptr);
-
-#ifndef NDBUG
-        static int ii = 0;
-        fs.open(string(getenv("HOME")) + "/iterative" + to_string(ii++) + ".txt");
-#endif
-
-        set_input_polarization(input_p);
-        set_non_input_polarization_zero();
-
-        shared_ptr<QCACell> cell = nullptr;
-
-        for (size_t i=0; i<1000; ++i) {
-
-            fs << i << "th iteration:" << endl;
-            fs << *circuit << endl;
-            for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
-                for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit) {
-                    cell = *cit;
-                    if (cell != nullptr && cell->cell_type != CellType::Input) {
-                        cell->polarization = compute_polarization_from_neighbour_cells(cell->r_index, cell->c_index);
-                    }
-                }
-            }
-        }
-    }
-     */
-    void IterativeSimEngine::run_simulation(const Polarization &input_p) {
-        assert(circuit != nullptr);
-
-        set_input_polarization(input_p);
-        set_non_input_polarization_zero();
-
-        static const long double convergence_factor = 1e-10;
-
-        shared_ptr<QCACell> cell = nullptr;
-        Polarization old_pola;
-        Polarization new_pola;
-        size_t cell_cnt = 0;
-        long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
-
-        for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
-            for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
-                cell = *cit;
-                if (cell != nullptr) {
-                    if (cell->cell_type == CellType::Input) continue;
-
-                    new_pola.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
-                    ++cell_cnt;
-                }
-            }
-        }
-
-#ifndef NDBUG
-        int loop_cnt = 0;
-        static int ii = 0;
-        string filename = "/iterative_output_" + to_string(ii++) + ".txt";
-        fs.open(getenv("HOME") + filename);
-#endif
-
-        do {
-            //[1]save current circuit state into old_pola
-            old_pola = new_pola;
-
-            //[2]compute new polarization according to the formula, and save the results into new_pola
-            new_pola.clear();
-            for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
-                for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
-                    cell = *cit;
-                    if (cell != nullptr) {
-                        if (cell->cell_type == CellType::Input) continue;
-
-                        auto &ridx = cell->r_index;
-                        auto &cidx = cell->c_index;
-
-                        auto pola_val = compute_polarization_from_neighbour_cells(ridx, cidx);
-
-                        new_pola.push_back(make_tuple(ridx, cidx, pola_val));
-                        cell->polarization = pola_val;//write back the newly computed polarization to the circuit
-                    }
-                }
-            }
-            assert(old_pola.size() == new_pola.size());
-
-            //[3]update convergence_val
-            long double diff_1 = 0;
-
-            for (size_t i = 0; i < old_pola.size(); ++i) {
-                auto &old_pola_val = get<2>(old_pola[i]);
-                auto &new_pola_val = get<2>(new_pola[i]);
-
-                diff_1 += pow(old_pola_val - new_pola_val, 2);
-            }
-
-            diff_1 = sqrt(diff_1);
-
-            convergence_val = diff_1;
-
-#ifndef NDBUG
-            fs << loop_cnt++ << "th iteration" << endl;
-            fs << "convergence_val : " << convergence_val << endl;
-            fs << *circuit << endl;
-#endif
-
-        } while (convergence_val > convergence_factor);//end while loop
-    }
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //Simulated Anealing Algorithm
     const long double SimulatedAnealingSimEngine::MAX_TEMP = 1000;
     const long double SimulatedAnealingSimEngine::MIN_TEMP = 0.01;
     const long double SimulatedAnealingSimEngine::cooling_rate = 0.999;
-//    const long double SimulatedAnealingSimEngine::energy_scaling_factor = 10e10;
 
     SimulatedAnealingSimEngine::SimulatedAnealingSimEngine() : SimEngine() {
         srand(time(0));
@@ -381,9 +354,6 @@ namespace hfut {
     void SimulatedAnealingSimEngine::cooling() {
         //cooling the sa algorithm temperature
         sa_temp *= cooling_rate;
-
-        //update energy_scaling_factor
-        //energy_scaling_factor = pow(10, -4*log10(sa_temp) + 30);//change interval [10e10, 10e30]
     }
 
     long double SimulatedAnealingSimEngine::compute_polarization_energy(const Polarization &output_p) const {

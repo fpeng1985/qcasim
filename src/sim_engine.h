@@ -53,7 +53,7 @@ namespace hfut {
          * \brief interface to the simuation engine
          * \param input_o a map of Polarization representing the circuit input
          */
-        virtual void run_simulation(const Polarization &input_p) {};
+        virtual void run_simulation(const Polarization &input_p);
 
         /*!
          * \fn void set_input_polarization(const Polarization &pola) const
@@ -138,7 +138,7 @@ namespace hfut {
         void accept();
 
         /*!
-         * \fn void update_sa_parameters();
+         * \fn void cooling();
          * \brief update sa algorithm parameters at the end of each iteration
          */
         void cooling();
@@ -171,11 +171,8 @@ namespace hfut {
         static const long double MAX_TEMP;//! the begging temperature of the sa algorithm
         static const long double MIN_TEMP;//! the ending temperature of the sa algorithm
         static const long double cooling_rate; //!< the simulated anealing algorithm parameter representing cooling rate
-//        static const long double energy_scaling_factor;//! multiply this factor to the original energy value will change the convergence speed
-
 
         long double sa_temp;//!< the simulated anealing algorithm parameter representing current temperature
-//        long double convergence_factor;//!< when the current energy difference is smaller than the convergence factor, the algorithm will be terminated
 
         //run time states
         Polarization input_p;//!< input cells's polarizations

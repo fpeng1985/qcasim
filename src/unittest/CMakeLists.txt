@@ -9,4 +9,3 @@ add_executable(test_simulated_anealing_sim_engine test_simulated_anealing_sim_en
 
 add_executable(test_sim_manager test_sim_manager.cpp ../sim_manager.cpp ../sim_engine.cpp ${QCA_SRC})
 
-add_executable(main main.cpp ../sim_engine.cpp ${QCA_SRC})

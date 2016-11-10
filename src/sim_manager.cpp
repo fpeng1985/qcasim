@@ -18,14 +18,17 @@ namespace hfut {
     SimManager::SimManager() {
         circuit = make_shared<QCACircuit>();
 
-        engine = make_shared<SimulatedAnealingSimEngine>();
+        engine = make_shared<SimEngine>();
         engine->set_circuit(circuit);
     }
 
     void SimManager::load_benchmark(const string &path) {
+        //[1]reset input_size
+        input_size = 0;
+
+        //[2]read benchmark file into structure, row by row, column by column
         QCACircuit::CircuitStructure structure;
 
-        //read benchmark file into structure, row by row, column by column
         ifstream ifs(path);
         istringstream iss;
         for (string line; getline(ifs, line);) {
@@ -36,39 +39,31 @@ namespace hfut {
             copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(*structure.rbegin()));
         }
         ifs.close();
-
-        //populate circuit
-        circuit->populate_cells(structure);
-
-        //generate all the circuit structures
         structures.push_back(structure);
 
-        //define helper types
+        //[3]find all the non-input cell's indices, and set the input size
         typedef std::pair<int, int> Index;
         typedef std::vector<Index> IndexContainer;
 
-        //find all the normal cell's indices
         IndexContainer indices;
-
-        shared_ptr<QCACell> cell;
-        int r=0;
-        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++r) {
-            int c=0;
-            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit, ++c) {
-                cell = *cit;
-
-                if (cell != nullptr && cell->cell_type==CellType::Normal) {
-                    indices.push_back(make_pair(r, c));
+        for (size_t i=0; i<structure.size(); ++i) {
+            for (size_t j=0; j<structure[i].size(); ++j) {
+                if (structure[i][j] != 0) {
+                    if (structure[i][j] == -1) {//input cell
+                        ++input_size;
+                    } else {//non-input cell
+                        indices.push_back(make_pair(i, j));
+                    }
                 }
             }
         }
 
-        //generate all the combinations, in integer representation
+        //[4]generate all the combinations, in integer representation
         CombinationGenerator combgen;
         vector<vector<int>> combinations;
         combgen.generate_combination(indices.size(), combinations);
 
-        //change the integer representation to index format
+        //[5]change the integer representation to index format
         vector<IndexContainer> containers;
         for (auto &comb : combinations) {
             containers.emplace_back();
@@ -77,7 +72,7 @@ namespace hfut {
             }
         }
 
-        //fill the structures
+        //[6]generate all the structures
         for (auto &container : containers) {
             structures.push_back(structures[0]);
 
@@ -92,6 +87,53 @@ namespace hfut {
         }
 
         assert(structures.size() == combinations.size()+1);
+    }
+
+    void SimManager::test_benchmark() {
+        int input_comb_size = 1<<input_size;
+
+        for (auto &structure : structures) {
+            circuit->populate_cells(structure);
+            QCATruthTable truth_table;
+
+            //for each input combination compute its output
+            for (int i=0; i<input_comb_size; ++i) {
+                //initialize input bits
+                vector<int> bits;
+                int j=i;
+                do {
+                    bits.push_back(j^1);
+                    j = j>>1;
+                } while(j!=0);
+
+                //initialize input in both truth value and polarization value form
+                QCATruthValueList input_truth_vals;
+                PolarizationList input_p = circuit->get_input_polarizations();
+
+                assert(bits.size() == input_size);
+                assert(input_p.size() == input_size);
+
+                for (size_t k=0; k<bits.size(); ++k) {
+                    input_truth_vals.push_back(make_tuple(get<0>(input_p[k]), get<1>(input_p[k]), bits[k]));
+                    get<2>(input_p[k]) = convert_logic_to_polarization(bits[k]);
+                }
+
+                //run the simulation
+                engine->run_simulation(input_p);
+
+                PolarizationList output_p = circuit->get_output_polarizations();
+
+                QCATruthValueList output_truth_vals;
+                for (size_t k=0; k<output_p.size(); ++k) {
+                    output_truth_vals.push_back(make_tuple(get<0>(output_p[k]), get<1>(output_p[k]),
+                                                           convert_polarization_to_logic(get<2>(output_p[k]))));
+                }
+
+                truth_table.insert(make_pair(input_truth_vals, output_truth_vals));
+            }
+
+            tables.push_back(truth_table);
+        }
     }
 
     void SimManager::CombinationGenerator::generate_combination(int n, vector<vector<int>> &combinations) {

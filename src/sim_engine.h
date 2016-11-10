@@ -55,6 +55,7 @@ namespace hfut {
          */
         virtual void run_simulation(const Polarization &input_p);
 
+    protected:
         /*!
          * \fn void set_input_polarization(const Polarization &pola) const
          * \brief set the circuit input in polarization format

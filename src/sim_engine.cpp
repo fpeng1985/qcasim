@@ -32,6 +32,18 @@ namespace hfut {
         }
     }
 
+    void SimEngine::set_non_input_polarization_zero() const {
+        shared_ptr<QCACell> cell;
+        for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
+            for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit) {
+                cell = *cit;
+                if (cell != nullptr && cell->cell_type != CellType::Input) {
+                    cell->polarization = 0;
+                }
+            }
+        }
+    }
+
     void SimEngine::set_non_input_polarization_randomly() const {
         shared_ptr<QCACell> cell;
         for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
@@ -131,11 +143,41 @@ namespace hfut {
         return new_pola_val;
     }
 
+    //Iterative Algorithm
+    /*
+    void IterativeSimEngine::run_simulation(const Polarization &input_p) {
+        assert(circuit != nullptr);
+
+#ifndef NDBUG
+        static int ii = 0;
+        fs.open(string(getenv("HOME")) + "/iterative" + to_string(ii++) + ".txt");
+#endif
+
+        set_input_polarization(input_p);
+        set_non_input_polarization_zero();
+
+        shared_ptr<QCACell> cell = nullptr;
+
+        for (size_t i=0; i<1000; ++i) {
+
+            fs << i << "th iteration:" << endl;
+            fs << *circuit << endl;
+            for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
+                for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit) {
+                    cell = *cit;
+                    if (cell != nullptr && cell->cell_type != CellType::Input) {
+                        cell->polarization = compute_polarization_from_neighbour_cells(cell->r_index, cell->c_index);
+                    }
+                }
+            }
+        }
+    }
+     */
     void IterativeSimEngine::run_simulation(const Polarization &input_p) {
         assert(circuit != nullptr);
 
         set_input_polarization(input_p);
-        set_non_input_polarization_randomly();
+        set_non_input_polarization_zero();
 
         static const long double convergence_factor = 1e-10;
 
@@ -211,14 +253,14 @@ namespace hfut {
         } while (convergence_val > convergence_factor);//end while loop
     }
 
+    //Simulated Anealing Algorithm
+    const long double SimulatedAnealingSimEngine::MAX_TEMP = 1000;
+    const long double SimulatedAnealingSimEngine::MIN_TEMP = 0.01;
+    const long double SimulatedAnealingSimEngine::cooling_rate = 0.999;
+//    const long double SimulatedAnealingSimEngine::energy_scaling_factor = 10e10;
+
     SimulatedAnealingSimEngine::SimulatedAnealingSimEngine() : SimEngine() {
         srand(time(0));
-
-        //set simulated annealing algorithm parameters
-        sa_temp = 1000;
-        cooling_rate = 0.9999;
-        terminate_temp = 0.01;
-        convergence_factor = 1e-8;
     }
 
     void SimulatedAnealingSimEngine::run_simulation(const Polarization &input_p) {
@@ -229,9 +271,10 @@ namespace hfut {
         setup_runtime_states();
 
         int i=0;
-        while ( sa_temp > terminate_temp ) {
+        while ( sa_temp > MIN_TEMP ) {
             neighbour();
             accept();
+            cooling();
 
 #ifndef NDBUG
             fs << i++  << "th iteration, energy is " << output_energy <<  endl;
@@ -248,6 +291,20 @@ namespace hfut {
 #endif
 
         shared_ptr<QCACell> cell;
+
+        //using the polarization formula to set the initial state of the circuit
+        for (size_t i=0; i<5; ++i) {
+            for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit) {
+                for (auto cit=circuit->col_begin(rit); cit!=circuit->col_end(rit); ++cit) {
+                    cell = *cit;
+                    if (cell != nullptr && cell->cell_type != CellType::Input) {
+                        cell->polarization = compute_polarization_from_neighbour_cells(cell->r_index, cell->c_index);
+                    }
+                }
+            }
+        }
+
+        //setup input_p and output_p states
         int r=0;
         for (auto rit=circuit->row_begin(); rit!=circuit->row_end(); ++rit, ++r) {
             int c=0;
@@ -270,7 +327,8 @@ namespace hfut {
         best_p    = output_p;
         best_energy = output_energy;
 
-        energy_scaling_factor = 10e10;
+        //set simulated annealing algorithm parameters
+        sa_temp = MAX_TEMP;
     }
 
     void SimulatedAnealingSimEngine::neighbour() {
@@ -289,7 +347,7 @@ namespace hfut {
 
         long double avg_val = compute_polarization_from_neighbour_cells(ridx, cidx);
 
-        get<2>(*it) = rand_val * sa_temp / 1000 +  avg_val * (1000 - sa_temp) / 1000;
+        get<2>(*it) = rand_val * sa_temp / MAX_TEMP +  avg_val * (1000 - sa_temp) / MAX_TEMP;
 
         //compute energy value for neighbour
         neighbour_energy = compute_polarization_energy(neighbour_p);
@@ -318,9 +376,14 @@ namespace hfut {
                 best_energy = neighbour_energy;
             }
         }
+    }
 
+    void SimulatedAnealingSimEngine::cooling() {
         //cooling the sa algorithm temperature
         sa_temp *= cooling_rate;
+
+        //update energy_scaling_factor
+        //energy_scaling_factor = pow(10, -4*log10(sa_temp) + 30);//change interval [10e10, 10e30]
     }
 
     long double SimulatedAnealingSimEngine::compute_polarization_energy(const Polarization &output_p) const {
@@ -424,17 +487,23 @@ namespace hfut {
             }
         }
 
-        long double total_energy = (individual_energy + mutal_energy/2.0) * energy_scaling_factor;
+        long double total_energy = (individual_energy + mutal_energy/2.0);
         return total_energy;
     }
 
     bool SimulatedAnealingSimEngine::compare_energy(long double circuit_energy, long double neighbour_energy) const {
+        static const long double FACTOR = 10e50;
+
         if (neighbour_energy < circuit_energy) {
+#ifndef NDBUG
+            const_cast<ofstream&>(fs) << string("directly accept neighbour") << endl;
+#endif
             return true;
         } else {
-            long double prob = exp((output_energy) / sa_temp);//please note output_energy is a negative value!!!
+            long double prob = exp( (circuit_energy*FACTOR - output_energy*FACTOR) / sa_temp );//please note output_energy is a negative value!!!
 #ifndef NDBUG
             const_cast<ofstream&>(fs) << string("enter judge mode") << endl;
+            const_cast<ofstream&>(fs) << string("energy diff : ") << (circuit_energy*FACTOR - output_energy*FACTOR) << endl;
             const_cast<ofstream&>(fs) << string("accept probability is ") << prob << endl;
 #endif
             if (prob > rand()*1.0/RAND_MAX) {//[0,1]
@@ -450,7 +519,5 @@ namespace hfut {
         }
         return false;
     }
-
-
 
 }

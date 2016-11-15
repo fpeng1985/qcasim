@@ -237,6 +237,14 @@ namespace hfut {
          */
         void test_benchmark();
 
+        /*!
+         * \fn void compute_truth_table(const QCACircuit::CircuitStructure &structure, QCATruthTable &table)
+         * \brief compute the given circuit structure's truth table, stores the results into parameter table
+         * \param structure circuit structure class
+         * \param table truth table class storing the computed results
+         */
+        void compute_truth_table(const QCACircuit::CircuitStructure &structure, QCATruthTable &table);
+
     protected:
         static inline long double convert_logic_to_polarization(int logic_val) {
             return 2*logic_val - 1;
@@ -252,10 +260,6 @@ namespace hfut {
                 return -1;
             }
         }
-
-        void test_circuit_structure(SimResult &result);
-
-        void compute_truth_table(const QCACircuit::CircuitStructure &structure, QCATruthTable &table);
 
     private:
         std::shared_ptr<SimEngine>  engine;//!< pointer to the simulation engine, initialized in constructor

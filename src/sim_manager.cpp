@@ -188,8 +188,28 @@ namespace hfut {
 
             int correct_cnt = 0;
             for (auto &result : result_grp) {
+                const QCACircuit::CircuitStructure &structure = result.circuit_structure;
+                QCATruthTable &table = result.truth_table;
 
-                test_circuit_structure(result);
+                compute_truth_table(structure, table);
+
+                //check success
+                result.success = true;
+                for (auto &mapping : table) {
+                    auto &outputs = mapping.second;
+
+                    for (auto &output : outputs) {
+                        if (output == -1) {
+                            result.success = false;
+                            break;
+                        }
+                    }
+
+                    if (!result.success) break;
+                }
+
+                //check correct
+                result.correct = (table==benchmark_truth_table);
 
                 if (result.correct) {
                     ++correct_cnt;
@@ -199,32 +219,6 @@ namespace hfut {
             result_grp.set_correction_ratial(correct_cnt * 1.0 / result_grp.size());
 
             results.insert(make_pair(m, result_grp));
-        }
-    }
-
-    void SimManager::test_circuit_structure( SimResult &result) {
-        const QCACircuit::CircuitStructure &structure = result.circuit_structure;
-        QCATruthTable &table = result.truth_table;
-
-        compute_truth_table(structure, table);
-
-        //check success
-        for (auto &mapping : table) {
-            auto &outputs = mapping.second;
-
-            for (auto &output : outputs) {
-                if (output == -1) {
-                    result.success = false;
-                    break;
-                }
-            }
-
-            if (!result.success) break;
-        }
-
-        //check correct
-        if (table != benchmark_truth_table) {
-            result.correct = false;
         }
     }
 

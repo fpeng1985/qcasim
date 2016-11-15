@@ -10,30 +10,47 @@ using namespace std;
 #include "sim_manager.h"
 using namespace hfut;
 
-SCENARIO("majority gate 1", "[majority_gate_1]") {
-    SimManager manager;
+SCENARIO("combination generation", "[combination generation]") {
 
-    SimManager::CombinationGenerator comgen;
+    vector<int> a;
+    for (int i=0; i<10; ++i) {
+        a.push_back(i);
+    }
 
-    GIVEN("A circuit majority gate 1") {
-        string mg1 = getenv("COMMON") + string("/benchmark/qcasim/majority_gate_1.txt");
+    vector<vector<int>> combinations;
 
-        WHEN("we load the benchmark") {
+    CombinationGenerator<int> comgen;
 
-            vector<vector<int>> combinations;
-            comgen.generate_combination(10, combinations);
+    GIVEN("A size number m = 1") {
+        int m = 1;
 
-            /*
-            for (auto &comb : combinations) {
-                for (auto id : comb) {
-                    cout << id << " ";
+        WHEN("we generate the combinations") {
+            comgen.generate_combination(a, m, combinations);
+
+            THEN("we get the 1 item combinations") {
+                for (auto &comb : combinations) {
+                    for (auto id : comb) {
+                        cout << id << " ";
+                    }
+                    cout << endl;
                 }
-                cout << endl;
             }
-             */
+        }
+    }
 
-            manager.load_benchmark(mg1);
-            THEN("we get the corresponding circuit structures") {
+    GIVEN("A size number m = 3") {
+        int m = 3;
+
+        WHEN("we generate the combinations") {
+            comgen.generate_combination(a, m, combinations);
+
+            THEN("we get the 3 item combinations") {
+                for (auto &comb : combinations) {
+                    for (auto id : comb) {
+                        cout << id << " ";
+                    }
+                    cout << endl;
+                }
             }
         }
     }

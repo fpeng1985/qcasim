@@ -15,6 +15,84 @@ namespace hfut {
 
     using namespace std;
 
+    QCATruthTable::QCATruthTable(const std::vector<std::pair<int, int>> &input_idx, const std::vector<std::pair<int, int>> &output_idx) {
+        input_size  = input_idx.size();
+        output_size = output_idx.size();
+
+        int input_comb_size  = 1<<input_size;
+
+        QCATruthValueSet inputs;
+        QCATruthValueSet outputs;
+
+        for (int i=0; i<input_comb_size; ++i) {
+            //get input values
+            inputs.clear();
+
+            int j = i;
+            for (size_t k=0; k < input_size; ++k) {
+                inputs.insert( make_tuple(input_idx[k].first, input_idx[k].second, j^1) );
+                j /= 2;
+            }
+
+            assert(j == 0);
+            assert(inputs.size()  == input_size);
+
+            //get output values
+            outputs.clear();
+
+            for (size_t k=0; k<output_size; ++k) {
+                outputs.insert( make_tuple(output_idx[k].first, output_idx[k].second, 0) );
+            }
+
+            assert(outputs.size() == output_size);
+
+            //insert the mapping from inputs to outputs
+            table.insert(make_pair(inputs, outputs));
+        }
+    }
+
+    std::ostream &operator<<(std::ostream &os, const QCATruthTable &truth_table) {
+        for (auto &mapping : truth_table.table) {
+            auto &inputs  = mapping.first;
+            auto &outputs = mapping.second;
+
+            for (auto &input:inputs) {
+                os << "(" << get<0>(input) << "," << get<1>(input) << "," << get<2>(input) << ") ";
+            }
+
+            os << " ---> ";
+
+            for (auto &output:outputs) {
+                os << "(" << get<0>(output) << "," << get<1>(output) << "," << get<2>(output) << ") ";
+            }
+
+            os << endl;
+        }
+
+        return os;
+    }
+
+    SimResultGroup::SimResultGroup(const QCACircuit::CircuitStructure &structure, const QCATruthTable &table,
+                                   const std::vector<std::vector<std::pair<int, int>>> &index_combinations) {
+
+        QCACircuit::CircuitStructure cs;
+
+        for (auto &index_combination : index_combinations) {
+            cs = structure;
+
+            for (auto &index:index_combination) {
+                auto &ridx = index.first;
+                auto &cidx = index.second;
+
+                cs[ridx][cidx] = 0;
+            }
+
+            results.push_back(SimResult(cs, table));
+        }
+
+        _correction_ratial = 0;
+    }
+
     SimManager::SimManager() {
         circuit = make_shared<QCACircuit>();
 
@@ -23,11 +101,8 @@ namespace hfut {
     }
 
     void SimManager::load_benchmark(const string &path) {
-        //[1]reset input_size
-        input_size = 0;
-
-        //[2]read benchmark file into structure, row by row, column by column
-        QCACircuit::CircuitStructure structure;
+        //[1]read benchmark file into circuit_structure, row by row, column by column
+        benchmark_circuit_structure.clear();
 
         ifstream ifs(path);
         istringstream iss;
@@ -35,132 +110,133 @@ namespace hfut {
             iss.str(line);
             iss.seekg(0);
 
-            structure.emplace_back();
-            copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(*structure.rbegin()));
+            benchmark_circuit_structure.emplace_back();
+            copy(istream_iterator<int>(iss), istream_iterator<int>(), back_inserter(*benchmark_circuit_structure.rbegin()));
         }
         ifs.close();
-        structures.push_back(structure);
 
-        //[3]find all the non-input cell's indices, and set the input size
-        typedef std::pair<int, int> Index;
-        typedef std::vector<Index> IndexContainer;
+        //[2]set cell sizes, fill cell indices, initialize benchmark circuit's truth table
+        input_cell_size = 0;
+        output_cell_size = 0;
+        normal_cell_size = 0;
 
-        IndexContainer indices;
-        for (size_t i=0; i<structure.size(); ++i) {
-            for (size_t j=0; j<structure[i].size(); ++j) {
-                if (structure[i][j] != 0) {
-                    if (structure[i][j] == -1) {//input cell
-                        ++input_size;
-                    } else {//non-input cell
-                        indices.push_back(make_pair(i, j));
+        typedef pair<int, int> CellIndex;
+        vector<CellIndex> input_idx;
+        vector<CellIndex> normal_idx;
+        vector<CellIndex> output_idx;
+
+        for (size_t i=0; i<benchmark_circuit_structure.size(); ++i) {
+            for (size_t j=0; j<benchmark_circuit_structure[i].size(); ++j) {
+                if (benchmark_circuit_structure[i][j] != 0) {
+                    switch (benchmark_circuit_structure[i][j]) {
+                        case -1://input cell
+                            ++input_cell_size;
+                            input_idx.push_back(make_pair(i, j));
+                            break;
+                        case 1://normal cell
+                            ++normal_cell_size;
+                            normal_idx.push_back(make_pair(i, j));
+                            break;
+                        case -2://output cell
+                            ++output_cell_size;
+                            output_idx.push_back(make_pair(i, j));
+                            break;
+                        default:
+                            //pass
+                            break;
                     }
                 }
             }
         }
 
-        //[4]generate all the combinations, in integer representation
-        CombinationGenerator combgen;
-        vector<vector<int>> combinations;
-        combgen.generate_combination(indices.size(), combinations);
+        benchmark_truth_table = QCATruthTable(input_idx, output_idx);
 
-        //[5]change the integer representation to index format
-        vector<IndexContainer> containers;
-        for (auto &comb : combinations) {
-            containers.emplace_back();
-            for (auto idx : comb) {
-                containers.rbegin()->push_back(indices[idx]);
-            }
+        //[3]simulate the original benchmark circuit
+        compute_truth_table(benchmark_circuit_structure, benchmark_truth_table);
+
+        //[4]set all the simulation results to the initial states
+        vector<vector<CellIndex>> combinations;
+        CombinationGenerator<CellIndex> combgen;
+
+        for (size_t m=1; m<=normal_cell_size; ++m) {
+            combinations.clear();
+            combgen.generate_combination(normal_idx, m, combinations);
+
+            SimResultGroup rsts(benchmark_circuit_structure, benchmark_truth_table, combinations);
+
+            results.insert(make_pair(m, rsts));
         }
-
-        //[6]generate all the structures
-        for (auto &container : containers) {
-            structures.push_back(structures[0]);
-
-            QCACircuit::CircuitStructure &s = *structures.rbegin();
-
-            for (auto &index : container) {
-                int &ridx = index.first;
-                int &cidx = index.second;
-
-                s[ridx][cidx] = 0;
-            }
-        }
-
-        assert(structures.size() == combinations.size()+1);
     }
 
     void SimManager::test_benchmark() {
-        int input_comb_size = 1<<input_size;
 
-        for (auto &structure : structures) {
-            circuit->populate_cells(structure);
-            QCATruthTable truth_table;
+        for ( auto &item:results) {
+            auto &result_grp  = item.second;
 
-            //for each input combination compute its output
-            for (int i=0; i<input_comb_size; ++i) {
-                //initialize input bits
-                vector<int> bits;
-                int j=i;
-                do {
-                    bits.push_back(j^1);
-                    j = j>>1;
-                } while(j!=0);
+            int correct_cnt = 0;
+            for (auto &result : result_grp) {
 
-                //initialize input in both truth value and polarization value form
-                QCATruthValueList input_truth_vals;
-                PolarizationList input_p = circuit->get_input_polarizations();
+                test_circuit_structure(result);
 
-                assert(bits.size() == input_size);
-                assert(input_p.size() == input_size);
-
-                for (size_t k=0; k<bits.size(); ++k) {
-                    input_truth_vals.push_back(make_tuple(get<0>(input_p[k]), get<1>(input_p[k]), bits[k]));
-                    get<2>(input_p[k]) = convert_logic_to_polarization(bits[k]);
+                if (result.correct) {
+                    ++correct_cnt;
                 }
-
-                //run the simulation
-                engine->run_simulation(input_p);
-
-                PolarizationList output_p = circuit->get_output_polarizations();
-
-                QCATruthValueList output_truth_vals;
-                for (size_t k=0; k<output_p.size(); ++k) {
-                    output_truth_vals.push_back(make_tuple(get<0>(output_p[k]), get<1>(output_p[k]),
-                                                           convert_polarization_to_logic(get<2>(output_p[k]))));
-                }
-
-                truth_table.insert(make_pair(input_truth_vals, output_truth_vals));
             }
 
-            tables.push_back(truth_table);
+            result_grp.set_correction_ratial(correct_cnt * 1.0 / result_grp.size());
         }
     }
 
-    void SimManager::CombinationGenerator::generate_combination(int n, vector<vector<int>> &combinations) {
-        vector<int> a;
-        for (int i=0; i<n; ++i) {
-            a.push_back(i);
+    void SimManager::test_circuit_structure( SimResult &result) {
+        const QCACircuit::CircuitStructure &structure = result.circuit_structure;
+        QCATruthTable &table = result.truth_table;
+
+        compute_truth_table(structure, table);
+
+        //check success
+        for (auto &mapping : table) {
+            auto &outputs = mapping.second;
+
+            for (auto &output : outputs) {
+                if (output == -1) {
+                    result.success = false;
+                    break;
+                }
+            }
+
+            if (!result.success) break;
         }
 
-        vector<int> b;
-        b.resize(a.size());
-
-        for (int m=1; m<=n; ++m) {
-            combine(a, n, b, m, m, combinations);
+        //check correct
+        if (table != benchmark_truth_table) {
+            result.correct = false;
         }
     }
 
-    void SimManager::CombinationGenerator::combine(const vector<int> &a, int n, vector<int> &b, int m, const int M, vector<vector<int>> &combinations) {
-        for(int i=n; i>=m; i--) {
-            b[m-1] = i - 1;
-            if (m > 1)
-                combine(a, i-1, b, m-1, M, combinations);
-            else {
-                vector<int> tmp;
-                for(int j=M-1; j>=0; j--)
-                    tmp.push_back(a[b[j]]);
-                combinations.push_back(tmp);
+    void SimManager::compute_truth_table(const QCACircuit::CircuitStructure &structure, QCATruthTable &table) {
+        circuit->populate_cells(structure);
+
+        PolarizationList input_p;
+        PolarizationList output_p;
+        for (auto &mapping : table) {
+            auto &inputs = mapping.first;
+
+            input_p.clear();
+            output_p.clear();
+
+            for (auto &input : inputs) {
+                input_p.push_back(make_tuple(get<0>(input), get<1>(input), convert_logic_to_polarization(get<2>(input))));
             }
+
+            engine->run_simulation(input_p);
+
+            output_p = circuit->get_output_polarizations();
+            QCATruthValueSet simulated_outputs;
+            for (auto &pola : output_p) {
+                simulated_outputs.insert(make_tuple(get<0>(pola), get<1>(pola), convert_polarization_to_logic(get<2>(pola))));
+            }
+
+            table.set_value(inputs, simulated_outputs);
         }
     }
 

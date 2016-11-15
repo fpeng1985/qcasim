@@ -14,34 +14,206 @@
 #include <vector>
 #include <tuple>
 #include <map>
+#include <set>
 #include <string>
 #include <memory>
+#include <iostream>
 #include <cassert>
 
+#ifndef NDBUG
+#define private   public
+#define protected public
+#endif
+
 namespace hfut {
+
+    //! helper template class for generating all the combinations of interger sequence [0,1,...,n-1]
+    template<typename T>
+    class CombinationGenerator {
+    public:
+        /*!
+         * \fn void generate_combination(const std::vector<T> &a, int m, std::vector<std::vector<T>> &combinations) {
+         * \brief the main generation routine
+         * \param a the vector representing the actual values
+         * \param m the size of the combination to be selected
+         * \param combinations the data structure storing the selected combination results
+         */
+        void generate_combination(const std::vector<T> &a, int m, std::vector<std::vector<T>> &combinations) {
+            int n = a.size();
+
+            assert(m>=1 && m<=n);
+            assert(combinations.empty());
+
+            std::vector<int> b;
+            b.resize(a.size());
+
+            combine(a, n, b, m, m, combinations);
+        }
+
+    private:
+        /*!
+         * \fn void combine(const std::vector<T> &a, int n, std::vector<int> &b, int m, const int M, std::vector<std::vector<T>> &combinations) {
+         * \brief the actual generation algorithm implemented in a recursive manner
+         * \param a the vector representing the actual values
+         * \param n the number of the current vector length in a recursive call
+         * \param b the vector stroring the results in a recursive call
+         * \param m the nubmer to be selected in a recursive call
+         * \param M the most top level number to be selected from the vector a
+         * \param combinations the data structure storing the generated results
+         */
+        void combine(const std::vector<T> &a, int n, std::vector<int> &b, int m, const int M, std::vector<std::vector<T>> &combinations) {
+            for(int i=n; i>=m; i--) {
+                b[m-1] = i - 1;
+                if (m > 1)
+                    combine(a, i-1, b, m-1, M, combinations);
+                else {
+                    std::vector<T> tmp;
+                    for(int j=M-1; j>=0; j--)
+                        tmp.push_back(a[b[j]]);
+                    combinations.push_back(tmp);
+                }
+            }
+        }
+    };
+
+    /*!
+     * \typedef std::tuple<int, int, int> QCATruthValue;
+     * \brief truth value type definition
+     */
+    typedef std::tuple<int, int, int> QCATruthValue;
+
+    /*!
+     * \ typedef std::set<QCATruthValue> QCATruthValueSet;
+     * \brief a set of QCATruthValue representing a group of input or output truth value
+     */
+    typedef std::set<QCATruthValue> QCATruthValueSet;
+
+    class QCATruthTable  {
+    public:
+        //! QCATruthTable default constructor
+        QCATruthTable() = default;
+
+        /*!
+         * \brief QCATruthTable constructor, used only in the original circuit structure's initialization
+         * \param input_idx the indices of the input
+         * \param output_idx the indices of the output
+         */
+        QCATruthTable(const std::vector<std::pair<int, int>> &input_idx, const std::vector<std::pair<int, int>> &output_idx);
+
+        /*!
+         * \fn inline void set_value(const QCATruthValueSet &input_values, const QCATruthValueSet &output_values)
+         * \brief set the input output mapping
+         * \param input_values the value of the input which is meant to be in the table already
+         * \param output_values the value of the output to be updated
+         */
+        inline void set_value(const QCATruthValueSet &input_values, const QCATruthValueSet &output_values) {
+            assert(table.count(input_values) == 1);
+
+            assert(input_values.size()  == input_size);
+            assert(output_values.size() == output_size);
+
+            table[input_values] = output_values;
+        }
+
+        inline size_t size() const {
+            return table.size();
+        }
+
+        ///////////////////////////////Iterators///////////////////////////////////////////
+        typedef std::map<QCATruthValueSet, QCATruthValueSet>::iterator QCATruthTableIterator;
+        typedef std::map<QCATruthValueSet, QCATruthValueSet>::const_iterator QCATruthTableConstIterator;
+
+        inline QCATruthTableIterator begin() {
+            return table.begin();
+        }
+
+        inline QCATruthTableIterator end() {
+            return table.end();
+        }
+
+        inline QCATruthTableConstIterator begin() const {
+            return table.begin();
+        }
+
+        inline QCATruthTableConstIterator end() const {
+            return table.end();
+        }
+        ///////////////////////////////Iterators///////////////////////////////////////////
+
+    private:
+        size_t input_size;//!< the size of the input cells
+        size_t output_size;//!< the size of the output cells
+        std::map< QCATruthValueSet, QCATruthValueSet> table;//!< map from input values to output values
+
+        friend std::ostream &operator<<(std::ostream &os, const QCATruthTable &truth_table);//!< friend decalreation
+    };
+
+    std::ostream &operator<<(std::ostream &os, const QCATruthTable &truth_table);
+
+    struct SimResult {
+        SimResult(const QCACircuit::CircuitStructure &structure, const QCATruthTable &table,
+                  bool sflag=true, bool cflag=true) : success(sflag), correct(cflag) {
+            circuit_structure = structure;
+            truth_table = table;
+        }
+
+        inline void update_sim_result(const QCATruthValueSet &input_values, const QCATruthValueSet &output_values) {
+            truth_table.set_value(input_values, output_values);
+        }
+
+        bool success;
+        bool correct;
+
+        QCACircuit::CircuitStructure circuit_structure;
+        QCATruthTable truth_table;
+
+    };
+
+    class SimResultGroup {
+    public:
+        SimResultGroup(const QCACircuit::CircuitStructure &structure, const QCATruthTable &table,
+                       const std::vector<std::vector<std::pair<int, int>>> &index_combinations);
+
+        inline double correction_ratial() const {
+            return _correction_ratial;
+        }
+
+        inline void set_correction_ratial(double ratial) {
+            _correction_ratial = ratial;
+        }
+
+        inline size_t size() const {
+            return results.size();
+        }
+
+        ///////////////////////////////Iterators///////////////////////////////////////////
+        typedef std::vector<SimResult>::iterator SimResultIterator;
+        typedef std::vector<SimResult>::const_iterator SimResultConstIterator;
+
+        inline SimResultIterator begin() {
+            return results.begin();
+        }
+
+        inline SimResultIterator end() {
+            return results.end();
+        }
+
+        inline SimResultConstIterator begin() const{
+            return results.begin();
+        }
+
+        inline SimResultConstIterator end() const{
+            return results.end();
+        }
+        ///////////////////////////////Iterators///////////////////////////////////////////
+    private:
+        std::vector<SimResult> results;
+        double _correction_ratial;
+    };
 
     //! the simulation management class
     class SimManager {
     public:
-
-        /*!
-         * \typedef std::tuple<int, int, int> QCATruthValue;
-         * \brief truth value type definition
-         */
-        typedef std::tuple<int, int, int> QCATruthValue;
-
-        /*!
-         * \typedef std::vector<QCATruthValue> QCATruthValueList;
-         * \brief vector of QCATruthValue representing a group of input or output truth value
-         */
-        typedef std::vector<QCATruthValue> QCATruthValueList;
-
-        /*!
-         * \typedef std::map< QCATruthValueList, QCATruthValueList > QCATruthTable;
-         * \brief truth table type definition
-         */
-        typedef std::map< QCATruthValueList, QCATruthValueList > QCATruthTable;
-
         //! SimManager constructor, create memory for simulation engine and QCA circuit
         SimManager();
 
@@ -64,49 +236,32 @@ namespace hfut {
         }
 
         static inline int convert_polarization_to_logic(long double pola_val) {
-            assert( (0.5 < pola_val && pola_val <= 1) || (-1 <= pola_val && pola_val < -0.5) );
 
-            if (pola_val > 0) {
+            if (pola_val >= 0.5 && pola_val <= 1) {
                 return 1;
-            } else {
+            } else if (pola_val <= -0.5 && pola_val >= -1){
                 return 0;
+            } else {
+                return -1;
             }
         }
+
+        void test_circuit_structure(SimResult &result);
+
+        void compute_truth_table(const QCACircuit::CircuitStructure &structure, QCATruthTable &table);
 
     private:
         std::shared_ptr<SimEngine>  engine;//!< pointer to the simulation engine
         std::shared_ptr<QCACircuit> circuit;//!< pointer to the QCA circuit
 
-        std::vector<QCACircuit::CircuitStructure> structures;//!< all the circuit structures generated from one benchmark
-        std::vector<QCATruthTable> tables;//! all the simulation results in logic form(instead of polarization form)
+        QCACircuit::CircuitStructure benchmark_circuit_structure;//!< original circuit structure loaded from the benchmark file
+        QCATruthTable benchmark_truth_table;//!< original circuit's truth table
 
-        unsigned int input_size;
+        size_t input_cell_size;//!< the number of the input cells
+        size_t normal_cell_size;//!< the number of the normal cells
+        size_t output_cell_size;//!< the number of the output cells
 
-    public:
-        //! helper class for generating all the combinations of interger sequence [0,1,...,n-1]
-        class CombinationGenerator {
-        public:
-         /*!
-          * \fn void generate_combination(int n, std::vector<std::vector<int>> &combinations)
-          * \brief the main generation routine
-          * \param n the number of integers
-          * \param combinations the data structure storing the generated results
-          */
-            void generate_combination(int n, std::vector<std::vector<int>> &combinations);
-
-        private:
-            /*!
-             * \fn void combine(const std::vector<int> &a, int n, std::vector<int> &b, int m, const int M, std::vector<std::vector<int>> &combinations)
-             * \brief the actual generation algorithm implemented in a recursive manner
-             * \param a the vector representing the integers [0,1,...,n-1]
-             * \param n the number of the current vector length in a recursive call
-             * \param b the vector stroring the results in a recursive call
-             * \param m the nubmer to be selected in a recursive call
-             * \param M the most top level number to be selected from the vector a
-             * \param combinations the data structure storing the generated results
-             */
-            void combine(const std::vector<int> &a, int n, std::vector<int> &b, int m, const int M, std::vector<std::vector<int>> &combinations);
-        };
+        std::map<size_t, SimResultGroup> results;//!< the simulation result data structure
     };
 }
 

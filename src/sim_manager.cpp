@@ -16,8 +16,13 @@ namespace hfut {
     using namespace std;
 
     QCATruthTable::QCATruthTable(const std::vector<std::pair<int, int>> &input_idx, const std::vector<std::pair<int, int>> &output_idx) {
+#ifndef NDBUG
         input_size  = input_idx.size();
         output_size = output_idx.size();
+#else
+        size_t input_size  = input_idx.size();
+        size_t output_size = output_idx.size();
+#endif
 
         int input_comb_size  = 1<<input_size;
 
@@ -72,9 +77,30 @@ namespace hfut {
         return os;
     }
 
+    bool operator==(const QCATruthTable &lhs, const QCATruthTable &rhs) {
+#ifndef NDBUG
+        if (lhs.input_size  != rhs.input_size)  return false;
+        if (lhs.output_size != rhs.output_size) return false;
+#endif
+
+        if (lhs.table != rhs.table) return false;
+
+        return true;
+    }
+
+    bool operator!=(const QCATruthTable &lhs, const QCATruthTable &rhs) {
+#ifndef NDBUG
+        if (lhs.input_size  != rhs.input_size)  return true;
+        if (lhs.output_size != rhs.output_size) return true;
+#endif
+
+        if (lhs.table != rhs.table) return true;
+
+        return false;
+    }
+
     SimResultGroup::SimResultGroup(const QCACircuit::CircuitStructure &structure, const QCATruthTable &table,
                                    const std::vector<std::vector<std::pair<int, int>>> &index_combinations) {
-
         QCACircuit::CircuitStructure cs;
 
         for (auto &index_combination : index_combinations) {
@@ -115,46 +141,42 @@ namespace hfut {
         }
         ifs.close();
 
-        //[2]set cell sizes, fill cell indices, initialize benchmark circuit's truth table
-        input_cell_size = 0;
+        //[2]set cell sizes, fill cell indices
+        input_cell_size  = 0;
         output_cell_size = 0;
         normal_cell_size = 0;
 
-        typedef pair<int, int> CellIndex;
-        vector<CellIndex> input_idx;
-        vector<CellIndex> normal_idx;
-        vector<CellIndex> output_idx;
+        input_idx.clear();
+        normal_idx.clear();
+        output_idx.clear();
 
         for (size_t i=0; i<benchmark_circuit_structure.size(); ++i) {
             for (size_t j=0; j<benchmark_circuit_structure[i].size(); ++j) {
-                if (benchmark_circuit_structure[i][j] != 0) {
-                    switch (benchmark_circuit_structure[i][j]) {
-                        case -1://input cell
-                            ++input_cell_size;
-                            input_idx.push_back(make_pair(i, j));
-                            break;
-                        case 1://normal cell
-                            ++normal_cell_size;
-                            normal_idx.push_back(make_pair(i, j));
-                            break;
-                        case -2://output cell
-                            ++output_cell_size;
-                            output_idx.push_back(make_pair(i, j));
-                            break;
-                        default:
-                            //pass
-                            break;
-                    }
+                switch (benchmark_circuit_structure[i][j]) {
+                    case -1://input cell
+                        ++input_cell_size;
+                        input_idx.push_back(make_pair(i, j));
+                        break;
+                    case 1://normal cell
+                        ++normal_cell_size;
+                        normal_idx.push_back(make_pair(i, j));
+                        break;
+                    case -2://output cell
+                        ++output_cell_size;
+                        output_idx.push_back(make_pair(i, j));
+                        break;
+                    default://no cell
+                        continue;
                 }
             }
         }
 
+        //[3]initialize and update benchmark truth table
         benchmark_truth_table = QCATruthTable(input_idx, output_idx);
-
-        //[3]simulate the original benchmark circuit
         compute_truth_table(benchmark_circuit_structure, benchmark_truth_table);
+    }
 
-        //[4]set all the simulation results to the initial states
+    void SimManager::test_benchmark() {
         vector<vector<CellIndex>> combinations;
         CombinationGenerator<CellIndex> combgen;
 
@@ -162,16 +184,7 @@ namespace hfut {
             combinations.clear();
             combgen.generate_combination(normal_idx, m, combinations);
 
-            SimResultGroup rsts(benchmark_circuit_structure, benchmark_truth_table, combinations);
-
-            results.insert(make_pair(m, rsts));
-        }
-    }
-
-    void SimManager::test_benchmark() {
-
-        for ( auto &item:results) {
-            auto &result_grp  = item.second;
+            SimResultGroup result_grp(benchmark_circuit_structure, benchmark_truth_table, combinations);
 
             int correct_cnt = 0;
             for (auto &result : result_grp) {
@@ -184,6 +197,8 @@ namespace hfut {
             }
 
             result_grp.set_correction_ratial(correct_cnt * 1.0 / result_grp.size());
+
+            results.insert(make_pair(m, result_grp));
         }
     }
 

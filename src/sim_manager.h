@@ -141,14 +141,22 @@ namespace hfut {
         ///////////////////////////////Iterators///////////////////////////////////////////
 
     private:
+
+#ifndef NDBUG
         size_t input_size;//!< the size of the input cells
         size_t output_size;//!< the size of the output cells
+#endif
+
         std::map< QCATruthValueSet, QCATruthValueSet> table;//!< map from input values to output values
 
-        friend std::ostream &operator<<(std::ostream &os, const QCATruthTable &truth_table);//!< friend decalreation
+        friend std::ostream &operator<<(std::ostream &os, const QCATruthTable &truth_table);//!< friend declareation for operator<<
+        friend bool operator==(const QCATruthTable &lhs, const QCATruthTable &rhs);//!< friend declaration for operator==
+        friend bool operator!=(const QCATruthTable &lhs, const QCATruthTable &rhs);//!< friend declaration for operator!=
     };
 
     std::ostream &operator<<(std::ostream &os, const QCATruthTable &truth_table);
+    bool operator==(const QCATruthTable &lhs, const QCATruthTable &rhs);
+    bool operator!=(const QCATruthTable &lhs, const QCATruthTable &rhs);
 
     struct SimResult {
         SimResult(const QCACircuit::CircuitStructure &structure, const QCATruthTable &table,
@@ -166,7 +174,6 @@ namespace hfut {
 
         QCACircuit::CircuitStructure circuit_structure;
         QCATruthTable truth_table;
-
     };
 
     class SimResultGroup {
@@ -251,17 +258,22 @@ namespace hfut {
         void compute_truth_table(const QCACircuit::CircuitStructure &structure, QCATruthTable &table);
 
     private:
-        std::shared_ptr<SimEngine>  engine;//!< pointer to the simulation engine
-        std::shared_ptr<QCACircuit> circuit;//!< pointer to the QCA circuit
+        std::shared_ptr<SimEngine>  engine;//!< pointer to the simulation engine, initialized in constructor
+        std::shared_ptr<QCACircuit> circuit;//!< pointer to the QCA circuit, initialized in constructor
 
-        QCACircuit::CircuitStructure benchmark_circuit_structure;//!< original circuit structure loaded from the benchmark file
-        QCATruthTable benchmark_truth_table;//!< original circuit's truth table
+        QCACircuit::CircuitStructure benchmark_circuit_structure;//!< original circuit structure, initialized in loading process
+        QCATruthTable benchmark_truth_table;//!< original circuit's truth table, initialized in loading process
 
-        size_t input_cell_size;//!< the number of the input cells
-        size_t normal_cell_size;//!< the number of the normal cells
-        size_t output_cell_size;//!< the number of the output cells
+        size_t input_cell_size;//!< the number of the input cells, initialized in loading process
+        size_t normal_cell_size;//!< the number of the normal cells, initialized in loading process
+        size_t output_cell_size;//!< the number of the output cells, initialized in loading process
 
-        std::map<size_t, SimResultGroup> results;//!< the simulation result data structure
+        typedef std::pair<int, int> CellIndex;
+        std::vector<CellIndex> input_idx;//!< the input cells' r-c index, initialized in loading process
+        std::vector<CellIndex> normal_idx;//!< the normal cells' r-c index, initialized in loading process
+        std::vector<CellIndex> output_idx;//!< the output cells' r-c index, initialized in loading process
+
+        std::map<size_t, SimResultGroup> results;//!< the simulation result data structure, computed in test process
     };
 }
 

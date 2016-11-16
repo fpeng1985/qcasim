@@ -5,6 +5,7 @@
 #include "qca_circuit.h"
 
 #include <queue>
+#include <cassert>
 
 namespace hfut {
 
@@ -13,10 +14,10 @@ namespace hfut {
     void QCACircuit::populate_cells(const CircuitStructure &cell_structure_matrix) {
         clear();
 
-        queue<shared_ptr<QCACell>> queue;
+        vector<shared_ptr<QCACell>> queue_cells;
         vector<vector<int>> vflag;
-        shared_ptr<QCACell> cell = nullptr;
 
+        shared_ptr<QCACell> cell = nullptr;
         for (size_t r=0; r<cell_structure_matrix.size(); ++r) {
             cells.push_back(vector<shared_ptr<QCACell>>());
             vflag.push_back(vector<int>());
@@ -34,7 +35,7 @@ namespace hfut {
                     case -1:
                         cell = make_shared<QCACell>(r, c, 0, CellType::Input);
                         cells[r].push_back(cell);
-                        queue.push(cell);
+                        queue_cells.push_back(cell);
                         vflag[r].push_back(1);
                         break;
                     case -2:
@@ -45,37 +46,113 @@ namespace hfut {
                         cerr << "Input format error!" << endl;
                         exit(-1);
                 }
-
             }
         }
 
+        assert(!queue_cells.empty());
+
+        queue<vector<shared_ptr<QCACell>>> queue;
+        queue.push(queue_cells);
+
         while (!queue.empty()) {
-            cell = queue.front();
-            cells_in_bfs.push_back(cell);
+            //push adjacent cells
+            queue_cells.clear();
+            for (auto &cell :queue.front()) {
+                assert(cell != nullptr);
+                auto &ridx = cell->r_index;
+                auto &cidx = cell->c_index;
+
+                if ( (get_cell(ridx, cidx-1) != nullptr) && (vflag[ridx][cidx-1] == 0) ) {
+                    queue_cells.push_back( cells[ridx][cidx-1] );
+                    vflag[ridx][cidx-1] = 1;
+                }
+
+                if ( (get_cell(ridx, cidx+1) != nullptr) && (vflag[ridx][cidx+1] == 0) ) {
+                    queue_cells.push_back( cells[ridx][cidx+1] );
+                    vflag[ridx][cidx+1] = 1;
+                }
+
+                if ( (get_cell(ridx-1, cidx) != nullptr) && (vflag[ridx-1][cidx] == 0) ) {
+                    queue_cells.push_back( cells[ridx-1][cidx] );
+                    vflag[ridx-1][cidx] = 1;
+                }
+
+                if ( (get_cell(ridx+1, cidx) != nullptr) && (vflag[ridx+1][cidx] == 0) ) {
+                    queue_cells.push_back( cells[ridx+1][cidx] );
+                    vflag[ridx+1][cidx] = 1;
+                }
+            }
+            if (!queue_cells.empty()) {
+                queue.push(queue_cells);
+            }
+
+            //push corner queue_cells
+            queue_cells.clear();
+            for (auto &cell :queue.front()) {
+                assert(cell != nullptr);
+                auto &ridx = cell->r_index;
+                auto &cidx = cell->c_index;
+
+                if ((get_cell(ridx - 1, cidx - 1) != nullptr) && (vflag[ridx - 1][cidx - 1] == 0)) {
+                    queue_cells.push_back(cells[ridx - 1][cidx - 1]);
+                    vflag[ridx - 1][cidx - 1] = 1;
+                }
+
+                if ((get_cell(ridx - 1, cidx + 1) != nullptr) && (vflag[ridx - 1][cidx + 1] == 0)) {
+                    queue_cells.push_back(cells[ridx - 1][cidx + 1]);
+                    vflag[ridx - 1][cidx + 1] = 1;
+                }
+
+                if ((get_cell(ridx + 1, cidx + 1) != nullptr) && (vflag[ridx + 1][cidx + 1] == 0)) {
+                    queue_cells.push_back(cells[ridx + 1][cidx + 1]);
+                    vflag[ridx + 1][cidx + 1] = 1;
+                }
+
+                if ((get_cell(ridx + 1, cidx - 1) != nullptr) && (vflag[ridx + 1][cidx - 1] == 0)) {
+                    queue_cells.push_back(cells[ridx + 1][cidx - 1]);
+                    vflag[ridx + 1][cidx - 1] = 1;
+                }
+            }
+            if (!queue_cells.empty()) {
+                queue.push(queue_cells);
+            }
+
+            //push separated queue_cells
+            queue_cells.clear();
+            for (auto &cell :queue.front()) {
+                assert(cell != nullptr);
+                auto &ridx = cell->r_index;
+                auto &cidx = cell->c_index;
+
+                if ((get_cell(ridx, cidx - 2) != nullptr) && (vflag[ridx][cidx - 2] == 0)) {
+                    queue_cells.push_back(cells[ridx][cidx - 2]);
+                    vflag[ridx][cidx - 2] = 1;
+                }
+
+                if ((get_cell(ridx, cidx + 2) != nullptr) && (vflag[ridx][cidx + 2] == 0)) {
+                    queue_cells.push_back(cells[ridx][cidx + 2]);
+                    vflag[ridx][cidx + 2] = 1;
+                }
+
+                if ((get_cell(ridx - 2, cidx) != nullptr) && (vflag[ridx - 2][cidx] == 0)) {
+                    queue_cells.push_back(cells[ridx - 2][cidx]);
+                    vflag[ridx - 2][cidx] = 1;
+                }
+
+                if ((get_cell(ridx + 2, cidx) != nullptr) && (vflag[ridx + 2][cidx] == 0)) {
+                    queue_cells.push_back(cells[ridx + 2][cidx]);
+                    vflag[ridx + 2][cidx] = 1;
+                }
+            }
+            if (!queue_cells.empty()) {
+                queue.push(queue_cells);
+            }
+
+            //pop cells
+            for (auto &cell : queue.front()) {
+                cells_in_bfs.push_back(cell);
+            }
             queue.pop();
-
-            auto &ridx = cell->r_index;
-            auto &cidx = cell->c_index;
-
-            if ( (get_cell(ridx, cidx-1) != nullptr) && (vflag[ridx][cidx-1] == 0) ) {
-                queue.push( cells[ridx][cidx-1] );
-                vflag[ridx][cidx-1] = 1;
-            }
-
-            if ( (get_cell(ridx, cidx+1) != nullptr) && (vflag[ridx][cidx+1] == 0) ) {
-                queue.push( cells[ridx][cidx+1] );
-                vflag[ridx][cidx+1] = 1;
-            }
-
-            if ( (get_cell(ridx-1, cidx) != nullptr) && (vflag[ridx-1][cidx] == 0) ) {
-                queue.push( cells[ridx-1][cidx] );
-                vflag[ridx-1][cidx] = 1;
-            }
-
-            if ( (get_cell(ridx+1, cidx) != nullptr) && (vflag[ridx+1][cidx] == 0) ) {
-                queue.push( cells[ridx+1][cidx] );
-                vflag[ridx+1][cidx] = 1;
-            }
         }
     }
 
@@ -89,6 +166,7 @@ namespace hfut {
 
     void QCACircuit::clear() {
         cells.clear();
+        cells_in_bfs.clear();
     }
 
     PolarizationList &&QCACircuit::get_input_polarizations() const {

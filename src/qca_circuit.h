@@ -296,9 +296,9 @@ namespace hfut {
 
     private:
         std::vector<std::vector<std::shared_ptr<QCACell>>>  cells;//!< the internal data structure for circuit layout
-        std::vector<std::shared_ptr<QCACell>> cells_in_bfs;
+        std::vector<std::shared_ptr<QCACell>> cells_in_bfs;//!< the internal data structure for bread first search
 
-        friend std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);
+        friend std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);//!< friend declaration
     };
 
     /*!

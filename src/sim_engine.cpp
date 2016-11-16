@@ -26,23 +26,21 @@ namespace hfut {
         set_non_input_polarization_zero();
 
         static const long double convergence_factor = 1e-10;
+        long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
 
-        shared_ptr<QCACell> cell = nullptr;
         PolarizationList old_pola;
         PolarizationList new_pola;
         size_t cell_cnt = 0;
-        long double convergence_val = 100;//any positive value greater than convergence_factor is OK!
 
-        for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
-            for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
-                cell = *cit;
-                if (cell != nullptr) {
-                    if (cell->cell_type == CellType::Input) continue;
+        shared_ptr<QCACell> cell = nullptr;
+        for (auto it=circuit->bfs_begin(); it!=circuit->bfs_end(); ++it) {
+            cell = *it;
+            assert(cell != nullptr);
 
-                    new_pola.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
-                    ++cell_cnt;
-                }
-            }
+            if (cell->cell_type == CellType::Input) continue;
+
+            new_pola.push_back(make_tuple(cell->r_index, cell->c_index, cell->polarization));
+            ++cell_cnt;
         }
 
 #ifndef NDBUG
@@ -58,21 +56,19 @@ namespace hfut {
 
             //[2]compute new polarization according to the formula, and save the results into new_pola
             new_pola.clear();
-            for (auto rit = circuit->row_begin(); rit != circuit->row_end(); ++rit) {
-                for (auto cit = circuit->col_begin(rit); cit != circuit->col_end(rit); ++cit) {
-                    cell = *cit;
-                    if (cell != nullptr) {
-                        if (cell->cell_type == CellType::Input) continue;
+            for (auto it=circuit->bfs_begin(); it!=circuit->bfs_end(); ++it) {
+                cell = *it;
+                assert(cell != nullptr);
 
-                        auto &ridx = cell->r_index;
-                        auto &cidx = cell->c_index;
+                if (cell->cell_type == CellType::Input) continue;
 
-                        auto pola_val = compute_polarization_from_neighbour_cells(ridx, cidx);
+                auto &ridx = cell->r_index;
+                auto &cidx = cell->c_index;
 
-                        new_pola.push_back(make_tuple(ridx, cidx, pola_val));
-                        cell->polarization = pola_val;//write back the newly computed polarization to the circuit
-                    }
-                }
+                auto pola_val = compute_polarization_from_neighbour_cells(ridx, cidx);
+
+                new_pola.push_back(make_tuple(ridx, cidx, pola_val));
+                cell->polarization = pola_val;//write back the newly computed polarization to the circuit
             }
             assert(old_pola.size() == new_pola.size());
 
@@ -108,6 +104,8 @@ namespace hfut {
 
             assert(circuit->get_cell(ridx, cidx) != nullptr);
             assert(circuit->get_cell(ridx, cidx)->cell_type == CellType::Input);
+            assert(pola_val <=1 && pola_val >= -1);
+
             circuit->get_cell(ridx, cidx)->polarization = pola_val;
         }
     }

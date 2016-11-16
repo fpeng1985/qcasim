@@ -93,6 +93,7 @@ SCENARIO("2 cells case 3", "[2 cells case 3]") {
         }
     }
 }
+ */
 
 SCENARIO("majority gate 1", "[majority_gate_1]") {
 
@@ -221,7 +222,6 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
         }
     }
 }
- */
 
 SCENARIO("majority gate 2", "[majority_gate_2]") {
 

@@ -83,20 +83,6 @@ namespace hfut {
 #endif
     };
 
-    //! the iterative simulation engine class
-    class IterativeSimEngine : public SimEngine {
-    public:
-        //! IterativeSimEngine constructor
-        IterativeSimEngine() : SimEngine() {};
-
-        /*!
-         * \fn void run_simulation(const Polarization &input_p)
-         * \brief the iterative implementation to the simulation interface
-         * \param input_p vector of polarization states representing the circuit input
-         */
-        void run_simulation(const PolarizationList &input_p);
-    };
-
     //! the simulated anealing simulation engine class
     class SimulatedAnealingSimEngine : public SimEngine {
     public:
@@ -108,7 +94,7 @@ namespace hfut {
          * \brief the simulated anealing implementation to the simulation interface
          * \param input_p vector of polarization states representing the circuit input
          */
-        void run_simulation(const PolarizationList &input_p);
+        void run_simulation(const PolarizationList &input_p) override;
 
     private:
         /////////////////////////////////////////////////////////////////////////////////////////////

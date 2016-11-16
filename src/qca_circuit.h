@@ -81,6 +81,18 @@ namespace hfut {
         typedef std::vector<std::shared_ptr<QCACell>>::const_reverse_iterator ReverseColConstIterator;
 
         /*!
+         * \typedef std::vector<std::shared_ptr<QCACell>>::iterator BfsIterator;
+         * \brief breath first search iterator for qca circuit
+         */
+        typedef std::vector<std::shared_ptr<QCACell>>::iterator BfsIterator;
+
+        /*!
+         * \typedef std::vector<std::shared_ptr<QCACell>>::const_iterator BfsConstIterator;
+         * \brief breath first search const iterator for qca circuit
+         */
+        typedef std::vector<std::shared_ptr<QCACell>>::const_iterator BfsConstIterator;
+
+        /*!
          * \fn inline RowIterator row_begin()
          * \brief row begin iterator
          */
@@ -215,6 +227,38 @@ namespace hfut {
         inline ReverseColConstIterator col_rend(const ReverseRowConstIterator &it)const {
             return it->crend();
         }
+
+        /*!
+         * \fn inline BfsIterator bfs_begin()
+         * \brief bfs iterator representing the beginning
+         */
+        inline BfsIterator bfs_begin() {
+            return cells_in_bfs.begin();
+        }
+
+        /*!
+         * \fn inline BfsIterator bfs_end()
+         * \brief bfs iterator representing the ending
+         */
+        inline BfsIterator bfs_end() {
+            return cells_in_bfs.end();
+        }
+
+        /*!
+         * \fn inline BfsConstIterator bfs_begin()
+         * \brief const bfs iterator representing the beginning
+         */
+        inline BfsConstIterator bfs_begin() const {
+            return cells_in_bfs.begin();
+        }
+
+        /*!
+         * \fn inline BfsConstIterator bfs_end()
+         * \brief const bfs iterator representing the ending
+         */
+        inline BfsConstIterator bfs_end() const {
+            return cells_in_bfs.end();
+        }
         /////////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////////////////////////////////////////////////////////////////
@@ -252,6 +296,7 @@ namespace hfut {
 
     private:
         std::vector<std::vector<std::shared_ptr<QCACell>>>  cells;//!< the internal data structure for circuit layout
+        std::vector<std::shared_ptr<QCACell>> cells_in_bfs;
 
         friend std::ostream & operator<<(std::ostream &out, const QCACircuit &circuit);
     };

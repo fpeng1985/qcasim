@@ -43,3 +43,38 @@ SCENARIO("majority gate 1", "[majority_gate_1]") {
     }
 }
 
+SCENARIO("majority gate 2", "[majority_gate_2]") {
+
+    QCACircuit circuit;
+
+    vector<vector<int>> circuit_structure_matrix;
+    GIVEN("A circuit majority gate 2") {
+
+        for (int i=0; i<9; ++i) {
+            circuit_structure_matrix.push_back(vector<int>());
+        }
+
+        circuit_structure_matrix[0] +=  0,  0, -1,  0,  0;
+        circuit_structure_matrix[1] +=  0,  1,  1,  1,  0;
+        circuit_structure_matrix[2] +=  0,  1,  1,  1,  0;
+        circuit_structure_matrix[3] +=  0,  1,  1,  1,  0;
+        circuit_structure_matrix[4] += -1,  1,  1,  1, -2;
+        circuit_structure_matrix[5] +=  0,  1,  1,  1,  0;
+        circuit_structure_matrix[6] +=  0,  1,  1,  1,  0;
+        circuit_structure_matrix[7] +=  0,  1,  1,  1,  0;
+        circuit_structure_matrix[8] +=  0,  0, -1,  0,  0;
+
+        WHEN("we populate the circuit using description matrix") {
+            circuit.populate_cells(circuit_structure_matrix);
+
+            cout << circuit << endl;
+
+            THEN("we get the circuit circuit_structure") {
+                REQUIRE(circuit.get_cell(0, 2)->cell_type == CellType::Input);
+                REQUIRE(circuit.get_cell(4, 0)->cell_type == CellType::Input);
+                REQUIRE(circuit.get_cell(8, 2)->cell_type == CellType::Input);
+                REQUIRE(circuit.get_cell(4, 4)->cell_type == CellType::Output);
+            }
+        }
+    }
+}

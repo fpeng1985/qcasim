@@ -2,3 +2,5 @@
 *~
 *.xml
 .idea/
+cmake-build-debug/
+
